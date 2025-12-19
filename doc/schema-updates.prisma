@@ -1,0 +1,95 @@
+// ==========================================
+// ACTUALIZACIONES PARA MÓDULOS AVANZADOS
+// ==========================================
+// Agregar al schema.prisma existente
+
+// 1. ACTUALIZAR MODELO FUNCIONARIO (agregar estos campos)
+model Funcionario {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  apellido    String
+  cargo       String
+  dependencia String
+  estado      Boolean  @default(true)
+  usuarioId   Int      @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // ====== NUEVOS CAMPOS ======
+  telegramChatId         String?  // Chat ID de Telegram para notificaciones
+  facialDataRegistered   Boolean  @default(false) // Si tiene rostro registrado
+  // ===========================
+
+  usuario              Usuario               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  asistencias          Asistencia[]
+  resumenMensual       ResumenMensual[]
+  reportes             Reporte[]
+  facialData           FacialData?           // Nueva relación 1:1
+  telegramLinkTokens   TelegramLinkToken[]   // Nueva relación 1:N
+
+  @@map("funcionarios")
+}
+
+// 2. NUEVA TABLA: FACIAL DATA
+model FacialData {
+  id             Int      @id @default(autoincrement())
+  funcionarioId  Int      @unique
+  descriptores   Json     // Array de descriptores faciales (Float32Array serializado)
+  fotoReferencia String   // URL o path de la foto de referencia
+  activo         Boolean  @default(true)
+  confianza      Float    @default(0.7) // Umbral de confianza para verificación (0-1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  funcionario    Funcionario      @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  
+  @@map("facial_data")
+}
+
+// 3. NUEVA TABLA: MARCAJES FACIALES (Evidencia)
+model MarcajeFacial {
+  id            Int      @id @default(autoincrement())
+  asistenciaId  Int      @unique
+  fotoEvidencia String   // URL o path de la foto capturada al hacer el marcaje
+  confidence    Float    // Nivel de confianza de la comparación (0-1)
+  createdAt     DateTime @default(now())
+
+  asistencia    Asistencia @relation(fields: [asistenciaId], references: [id], onDelete: Cascade)
+  
+  @@map("marcajes_faciales")
+}
+
+// 4. NUEVA TABLA: TELEGRAM LINK TOKENS
+model TelegramLinkToken {
+  id            Int      @id @default(autoincrement())
+  token         String   @unique // Token único para vincular Telegram
+  funcionarioId Int
+  expiresAt     DateTime // Expira en 24 horas
+  usado         Boolean  @default(false) // Si ya fue usado
+  createdAt     DateTime @default(now())
+
+  funcionario   Funcionario @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  
+  @@map("telegram_link_tokens")
+}
+
+// 5. ACTUALIZAR MODELO ASISTENCIA (agregar relación)
+model Asistencia {
+  id              Int       @id @default(autoincrement())
+  funcionarioId   Int
+  fecha           DateTime
+  horaMarcaje     DateTime
+  tipoMarcaje     TipoMarcaje
+  minutosTardanza Int       @default(0)
+  verificado      Boolean   @default(false)
+  observacion     String?
+  createdAt       DateTime  @default(now())
+
+  funcionario     Funcionario     @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  
+  // ====== NUEVA RELACIÓN ======
+  marcajeFacial   MarcajeFacial?  // Relación 1:1 con evidencia facial
+  // ============================
+
+  @@map("asistencias")
+}

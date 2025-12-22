@@ -2,106 +2,104 @@ import {
   Controller,
   Post,
   Get,
-  Delete,
   Param,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
   ParseIntPipe,
   Body,
-  UseGuards,
-  BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { FacialRecognitionService } from './facial-recognition.service';
 
 @Controller('facial-recognition')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class FacialRecognitionController {
-  constructor(private readonly facialService: FacialRecognitionService) {}
+  constructor(
+    private readonly facialRecognitionService: FacialRecognitionService,
+  ) {}
 
   /**
-   * POST /facial-recognition/register/:funcionarioId
-   * Registrar datos faciales de un funcionario
+   * Registrar datos faciales (Sistema antiguo - 1 foto)
+   * POST /facial-recognition/register/:id
    */
-  @Post('register/:funcionarioId')
-  @Roles('ADMIN', 'RRHH')
+  @Post('register/:id')
   @UseInterceptors(FileInterceptor('foto'))
-  async registrarDatosFaciales(
-    @Param('funcionarioId', ParseIntPipe) funcionarioId: number,
-    @UploadedFile() file: Express.Multer.File,
+  async registrar(
+    @Param('id', ParseIntPipe) funcionarioId: number,
+    @UploadedFile() foto: Express.Multer.File,
   ) {
-    if (!file) {
-      throw new BadRequestException('No se proporcionó ninguna imagen');
-    }
-
-    return this.facialService.registrarDatosFaciales(funcionarioId, file.path);
+    return this.facialRecognitionService.registrarDatosFaciales(
+      funcionarioId,
+      foto,
+    );
   }
 
   /**
-   * POST /facial-recognition/verify
-   * Verificar rostro y retornar funcionario
+   * Registrar datos faciales MÚLTIPLES (Sistema mejorado - 5 fotos)
+   * POST /facial-recognition/register-multiple/:id
    */
-  @Post('verify')
-  @UseInterceptors(FileInterceptor('foto'))
-  async verificarRostro(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No se proporcionó ninguna imagen');
-    }
-
-    return this.facialService.verificarRostro(file.path);
+  // @Post('register-multiple/:id')
+  // @UseInterceptors(FilesInterceptor('foto', 5)) // Hasta 5 archivos
+  // async registrarMultiple(
+  //   @Param('id', ParseIntPipe) funcionarioId: number,
+  //   @UploadedFiles() fotos: Express.Multer.File[],
+  //   @Body() body: any,
+  // ) {
+  //   return this.facialRecognitionService.registrarMultiple(
+  //     funcionarioId,
+  //     fotos,
+  //     body,
+  //   );
+  // }
+  @Post('register-multiple/:id')
+  @UseInterceptors(FilesInterceptor('foto', 5))
+  async registrarMultiple(
+    @Param('id', ParseIntPipe) funcionarioId: number,
+    @UploadedFiles() fotos: Express.Multer.File[],
+    @Body() body: any,
+  ) {
+    // ✅ AGREGAR ESTOS LOGS
+    console.log('🎯 ===== CONTROLLER: register-multiple =====');
+    console.log('📝 Funcionario ID:', funcionarioId);
+    console.log('📝 Fotos recibidas:', fotos?.length);
+    console.log('📝 Body recibido:', body);
+    console.log('📝 Nombres de archivos:', fotos?.map(f => f.originalname));
+    console.log('========================================');
+    
+    return this.facialRecognitionService.registrarMultiple(
+      funcionarioId,
+      fotos,
+      body,
+    );
   }
-
   /**
+   * Verificar rostro y registrar marcaje
    * POST /facial-recognition/marcar
-   * Registrar marcaje con reconocimiento facial
    */
   @Post('marcar')
+  @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('foto'))
-  async registrarMarcajeFacial(
-    @UploadedFile() file: Express.Multer.File,
-    @Body('tipoMarcaje') tipoMarcaje?: string,
-  ) {
-    if (!file) {
-      throw new BadRequestException('No se proporcionó ninguna imagen');
-    }
-
-    return this.facialService.registrarMarcajeFacial(file.path, tipoMarcaje);
+  async marcar(@UploadedFile() foto: Express.Multer.File) {
+    return this.facialRecognitionService.verificarYMarcar(foto);
   }
 
   /**
-   * GET /facial-recognition/:funcionarioId
-   * Obtener datos faciales de un funcionario
+   * Obtener estado del reconocimiento facial de un funcionario
+   * GET /facial-recognition/status/:id
    */
-  @Get(':funcionarioId')
-  @Roles('ADMIN', 'RRHH')
-  async obtenerDatosFaciales(
-    @Param('funcionarioId', ParseIntPipe) funcionarioId: number,
-  ) {
-    return this.facialService.obtenerDatosFaciales(funcionarioId);
+  @Get('status/:id')
+  async obtenerEstado(@Param('id', ParseIntPipe) funcionarioId: number) {
+    return this.facialRecognitionService.obtenerEstado(funcionarioId);
   }
 
   /**
-   * GET /facial-recognition
-   * Listar todos los funcionarios con datos faciales
+   * Eliminar registros faciales de un funcionario
+   * POST /facial-recognition/delete/:id
    */
-  @Get()
-  @Roles('ADMIN', 'RRHH')
-  async listarFuncionariosConDatosFaciales() {
-    return this.facialService.listarFuncionariosConDatosFaciales();
-  }
-
-  /**
-   * DELETE /facial-recognition/:funcionarioId
-   * Eliminar datos faciales
-   */
-  @Delete(':funcionarioId')
-  @Roles('ADMIN', 'RRHH')
-  async eliminarDatosFaciales(
-    @Param('funcionarioId', ParseIntPipe) funcionarioId: number,
-  ) {
-    return this.facialService.eliminarDatosFaciales(funcionarioId);
+  @Post('delete/:id')
+  async eliminarRegistros(@Param('id', ParseIntPipe) funcionarioId: number) {
+    return this.facialRecognitionService.eliminarRegistros(funcionarioId);
   }
 }

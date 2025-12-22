@@ -19,6 +19,7 @@ export declare class AsistenciasService {
         funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         verificado: boolean;
         observacion: string | null;
@@ -38,6 +39,7 @@ export declare class AsistenciasService {
         funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         verificado: boolean;
         observacion: string | null;
@@ -57,6 +59,7 @@ export declare class AsistenciasService {
         funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         verificado: boolean;
         observacion: string | null;
@@ -76,6 +79,7 @@ export declare class AsistenciasService {
         funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         verificado: boolean;
         observacion: string | null;
@@ -95,6 +99,7 @@ export declare class AsistenciasService {
         funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         verificado: boolean;
         observacion: string | null;
@@ -114,6 +119,7 @@ export declare class AsistenciasService {
         funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         verificado: boolean;
         observacion: string | null;
@@ -133,6 +139,7 @@ export declare class AsistenciasService {
         funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         verificado: boolean;
         observacion: string | null;
@@ -152,6 +159,7 @@ export declare class AsistenciasService {
         funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         verificado: boolean;
         observacion: string | null;

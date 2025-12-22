@@ -15,97 +15,79 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FacialRecognitionController = void 0;
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
-const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
-const roles_guard_1 = require("../auth/guards/roles.guard");
-const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const facial_recognition_service_1 = require("./facial-recognition.service");
 let FacialRecognitionController = class FacialRecognitionController {
-    facialService;
-    constructor(facialService) {
-        this.facialService = facialService;
+    facialRecognitionService;
+    constructor(facialRecognitionService) {
+        this.facialRecognitionService = facialRecognitionService;
     }
-    async registrarDatosFaciales(funcionarioId, file) {
-        if (!file) {
-            throw new common_1.BadRequestException('No se proporcionó ninguna imagen');
-        }
-        return this.facialService.registrarDatosFaciales(funcionarioId, file.path);
+    async registrar(funcionarioId, foto) {
+        return this.facialRecognitionService.registrarDatosFaciales(funcionarioId, foto);
     }
-    async verificarRostro(file) {
-        if (!file) {
-            throw new common_1.BadRequestException('No se proporcionó ninguna imagen');
-        }
-        return this.facialService.verificarRostro(file.path);
+    async registrarMultiple(funcionarioId, fotos, body) {
+        console.log('🎯 ===== CONTROLLER: register-multiple =====');
+        console.log('📝 Funcionario ID:', funcionarioId);
+        console.log('📝 Fotos recibidas:', fotos?.length);
+        console.log('📝 Body recibido:', body);
+        console.log('📝 Nombres de archivos:', fotos?.map(f => f.originalname));
+        console.log('========================================');
+        return this.facialRecognitionService.registrarMultiple(funcionarioId, fotos, body);
     }
-    async registrarMarcajeFacial(file, tipoMarcaje) {
-        if (!file) {
-            throw new common_1.BadRequestException('No se proporcionó ninguna imagen');
-        }
-        return this.facialService.registrarMarcajeFacial(file.path, tipoMarcaje);
+    async marcar(foto) {
+        return this.facialRecognitionService.verificarYMarcar(foto);
     }
-    async obtenerDatosFaciales(funcionarioId) {
-        return this.facialService.obtenerDatosFaciales(funcionarioId);
+    async obtenerEstado(funcionarioId) {
+        return this.facialRecognitionService.obtenerEstado(funcionarioId);
     }
-    async listarFuncionariosConDatosFaciales() {
-        return this.facialService.listarFuncionariosConDatosFaciales();
-    }
-    async eliminarDatosFaciales(funcionarioId) {
-        return this.facialService.eliminarDatosFaciales(funcionarioId);
+    async eliminarRegistros(funcionarioId) {
+        return this.facialRecognitionService.eliminarRegistros(funcionarioId);
     }
 };
 exports.FacialRecognitionController = FacialRecognitionController;
 __decorate([
-    (0, common_1.Post)('register/:funcionarioId'),
-    (0, roles_decorator_1.Roles)('ADMIN', 'RRHH'),
+    (0, common_1.Post)('register/:id'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('foto')),
-    __param(0, (0, common_1.Param)('funcionarioId', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
-], FacialRecognitionController.prototype, "registrarDatosFaciales", null);
+], FacialRecognitionController.prototype, "registrar", null);
 __decorate([
-    (0, common_1.Post)('verify'),
+    (0, common_1.Post)('register-multiple/:id'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('foto', 5)),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.UploadedFiles)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Array, Object]),
+    __metadata("design:returntype", Promise)
+], FacialRecognitionController.prototype, "registrarMultiple", null);
+__decorate([
+    (0, common_1.Post)('marcar'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('foto')),
     __param(0, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], FacialRecognitionController.prototype, "verificarRostro", null);
+], FacialRecognitionController.prototype, "marcar", null);
 __decorate([
-    (0, common_1.Post)('marcar'),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('foto')),
-    __param(0, (0, common_1.UploadedFile)()),
-    __param(1, (0, common_1.Body)('tipoMarcaje')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
-    __metadata("design:returntype", Promise)
-], FacialRecognitionController.prototype, "registrarMarcajeFacial", null);
-__decorate([
-    (0, common_1.Get)(':funcionarioId'),
-    (0, roles_decorator_1.Roles)('ADMIN', 'RRHH'),
-    __param(0, (0, common_1.Param)('funcionarioId', common_1.ParseIntPipe)),
+    (0, common_1.Get)('status/:id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
-], FacialRecognitionController.prototype, "obtenerDatosFaciales", null);
+], FacialRecognitionController.prototype, "obtenerEstado", null);
 __decorate([
-    (0, common_1.Get)(),
-    (0, roles_decorator_1.Roles)('ADMIN', 'RRHH'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], FacialRecognitionController.prototype, "listarFuncionariosConDatosFaciales", null);
-__decorate([
-    (0, common_1.Delete)(':funcionarioId'),
-    (0, roles_decorator_1.Roles)('ADMIN', 'RRHH'),
-    __param(0, (0, common_1.Param)('funcionarioId', common_1.ParseIntPipe)),
+    (0, common_1.Post)('delete/:id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
-], FacialRecognitionController.prototype, "eliminarDatosFaciales", null);
+], FacialRecognitionController.prototype, "eliminarRegistros", null);
 exports.FacialRecognitionController = FacialRecognitionController = __decorate([
     (0, common_1.Controller)('facial-recognition'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [facial_recognition_service_1.FacialRecognitionService])
 ], FacialRecognitionController);
 //# sourceMappingURL=facial-recognition.controller.js.map

@@ -73,11 +73,8 @@ let FuncionariosService = class FuncionariosService {
                     },
                 },
                 registrosFaciales: {
-                    where: {
-                        activo: true,
-                    },
                     orderBy: {
-                        fechaRegistro: 'desc',
+                        createdAt: 'desc',
                     },
                     take: 5,
                 },
@@ -228,7 +225,7 @@ let FuncionariosService = class FuncionariosService {
         const registros = await this.prisma.registroFacial.findMany({
             where: { funcionarioId: id },
             orderBy: {
-                fechaRegistro: 'desc',
+                createdAt: 'desc',
             },
         });
         return registros;
@@ -270,7 +267,7 @@ let FuncionariosService = class FuncionariosService {
             where: { funcionarioId: id },
         });
         const totalRegistrosFaciales = await this.prisma.registroFacial.count({
-            where: { funcionarioId: id, activo: true },
+            where: { funcionarioId: id },
         });
         const tardanzas = await this.prisma.asistencia.aggregate({
             where: {

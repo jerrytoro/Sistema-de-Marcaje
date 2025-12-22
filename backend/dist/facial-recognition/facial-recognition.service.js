@@ -44,113 +44,203 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FacialRecognitionService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../database/prisma.service");
+const prisma_service_1 = require("../prisma/prisma.service");
+require("@tensorflow/tfjs-backend-cpu");
+const tf = __importStar(require("@tensorflow/tfjs"));
+tf.setBackend('cpu');
 const faceapi = __importStar(require("face-api.js"));
 const canvas = __importStar(require("canvas"));
-const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
-const notifications_service_1 = require("../notifications/notifications.service");
 const { Canvas, Image, ImageData } = canvas;
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
 let FacialRecognitionService = class FacialRecognitionService {
     prisma;
-    notificationsService;
     modelsLoaded = false;
-    modelsPath = path.join(process.cwd(), 'models');
-    constructor(prisma, notificationsService) {
+    constructor(prisma) {
         this.prisma = prisma;
-        this.notificationsService = notificationsService;
-        this.loadModels();
+        this.inicializar();
     }
-    async loadModels() {
+    async inicializar() {
+        try {
+            await tf.ready();
+            console.log('✅ TensorFlow backend:', tf.getBackend());
+            await this.cargarModelos();
+        }
+        catch (error) {
+            console.error('❌ Error en inicialización:', error);
+        }
+    }
+    async cargarModelos() {
         if (this.modelsLoaded)
             return;
         try {
-            console.log('Cargando modelos de reconocimiento facial...');
-            await Promise.all([
-                faceapi.nets.ssdMobilenetv1.loadFromDisk(this.modelsPath),
-                faceapi.nets.faceLandmark68Net.loadFromDisk(this.modelsPath),
-                faceapi.nets.faceRecognitionNet.loadFromDisk(this.modelsPath),
-            ]);
+            const MODEL_URL = path.join(process.cwd(), 'models');
+            console.log('📂 Intentando cargar modelos desde:', MODEL_URL);
+            await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_URL);
+            console.log('✅ ssdMobilenetv1 cargado');
+            await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_URL);
+            console.log('✅ faceLandmark68Net cargado');
+            await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_URL);
+            console.log('✅ faceRecognitionNet cargado');
             this.modelsLoaded = true;
-            console.log('Modelos cargados exitosamente');
+            console.log('✅ Todos los modelos cargados correctamente');
         }
         catch (error) {
-            console.error('Error al cargar modelos:', error);
+            console.error('❌ Error detallado al cargar modelos:', error);
             throw new Error('No se pudieron cargar los modelos de reconocimiento facial');
         }
     }
-    async registrarDatosFaciales(funcionarioId, imagePath) {
-        await this.loadModels();
+    async detectarRostro(buffer) {
+        try {
+            const img = await canvas.loadImage(buffer);
+            const detecciones = await faceapi
+                .detectSingleFace(img)
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+            if (!detecciones) {
+                return null;
+            }
+            return detecciones.descriptor;
+        }
+        catch (error) {
+            console.error('Error al detectar rostro:', error);
+            return null;
+        }
+    }
+    async registrarDatosFaciales(funcionarioId, foto) {
+        if (!foto) {
+            throw new common_1.BadRequestException('No se proporcionó ninguna foto');
+        }
         const funcionario = await this.prisma.funcionario.findUnique({
             where: { id: funcionarioId },
         });
         if (!funcionario) {
-            throw new common_1.NotFoundException('Funcionario no encontrado');
+            throw new common_1.BadRequestException('Funcionario no encontrado');
         }
-        const img = await canvas.loadImage(imagePath);
-        const detection = await faceapi
-            .detectSingleFace(img)
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-        if (!detection) {
+        const descriptor = await this.detectarRostro(foto.buffer);
+        if (!descriptor) {
             throw new common_1.BadRequestException('No se detectó ningún rostro en la imagen');
         }
-        const descriptores = Array.from(detection.descriptor);
-        const existingData = await this.prisma.facialData.findUnique({
-            where: { funcionarioId },
+        await this.prisma.registroFacial.create({
+            data: {
+                funcionarioId,
+                facialData: JSON.stringify(Array.from(descriptor)),
+                metadata: {
+                    capturaNumero: 1,
+                    fechaCaptura: new Date().toISOString(),
+                    metodo: 'registro-simple',
+                },
+            },
         });
-        let facialData;
-        if (existingData) {
-            facialData = await this.prisma.facialData.update({
-                where: { funcionarioId },
-                data: {
-                    descriptores: descriptores,
-                    fotoReferencia: imagePath,
-                    activo: true,
-                },
-            });
-        }
-        else {
-            facialData = await this.prisma.facialData.create({
-                data: {
-                    funcionarioId,
-                    descriptores: descriptores,
-                    fotoReferencia: imagePath,
-                    activo: true,
-                    confianza: 0.7,
-                },
-            });
-        }
         await this.prisma.funcionario.update({
             where: { id: funcionarioId },
-            data: {
-                facialDataRegistered: true
-            },
+            data: { facialDataRegistered: true },
         });
         return {
-            message: 'Datos faciales registrados exitosamente',
-            facialData: {
-                id: facialData.id,
-                funcionarioId: facialData.funcionarioId,
-                fotoReferencia: facialData.fotoReferencia,
-                activo: facialData.activo,
-            },
+            message: 'Registro facial completado exitosamente',
+            funcionarioId,
+            registros: 1,
         };
     }
-    async verificarRostro(imagePath) {
-        await this.loadModels();
-        const img = await canvas.loadImage(imagePath);
-        const detection = await faceapi
-            .detectSingleFace(img)
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-        if (!detection) {
-            throw new common_1.BadRequestException('No se detectó ningún rostro en la imagen');
+    async registrarMultiple(funcionarioId, fotos, metadata) {
+        console.log('🔍 ========== INICIO REGISTRO MÚLTIPLE ==========');
+        console.log('📝 Funcionario ID:', funcionarioId);
+        console.log('📝 Cantidad de fotos recibidas:', fotos?.length);
+        console.log('📝 Metadata recibida:', metadata);
+        try {
+            if (!fotos || fotos.length !== 5) {
+                const error = `Se requieren exactamente 5 fotos, se recibieron ${fotos?.length || 0}`;
+                console.error('❌ ERROR DE VALIDACIÓN:', error);
+                throw new common_1.BadRequestException(error);
+            }
+            console.log('✅ Validación de cantidad de fotos: OK');
+            const funcionario = await this.prisma.funcionario.findUnique({
+                where: { id: funcionarioId },
+            });
+            console.log('📝 Funcionario encontrado:', funcionario ? 'SI' : 'NO');
+            if (!funcionario) {
+                console.error('❌ ERROR: Funcionario no encontrado con ID:', funcionarioId);
+                throw new common_1.BadRequestException('Funcionario no encontrado');
+            }
+            console.log('✅ Funcionario encontrado:', funcionario.nombre, funcionario.apellido);
+            console.log('🗑️ Eliminando registros anteriores...');
+            await this.prisma.registroFacial.deleteMany({
+                where: { funcionarioId },
+            });
+            console.log('✅ Registros anteriores eliminados');
+            const registrosCreados = [];
+            for (let i = 0; i < fotos.length; i++) {
+                const foto = fotos[i];
+                const instruccion = metadata[`instruccion${i + 1}`] || `Foto ${i + 1}`;
+                console.log(`\n📸 Procesando foto ${i + 1}/5`);
+                console.log('  - Instrucción:', instruccion);
+                console.log('  - Tamaño:', foto.size, 'bytes');
+                console.log('  - Tipo:', foto.mimetype);
+                console.log('  - Detectando rostro...');
+                const descriptor = await this.detectarRostro(foto.buffer);
+                if (!descriptor) {
+                    const errorMsg = `No se detectó rostro en la foto ${i + 1} (${instruccion})`;
+                    console.error(`  ❌ ${errorMsg}`);
+                    throw new common_1.BadRequestException(errorMsg);
+                }
+                console.log('  ✅ Rostro detectado, descriptor generado');
+                console.log('  - Longitud del descriptor:', descriptor.length);
+                console.log('  - Guardando en BD...');
+                const registro = await this.prisma.registroFacial.create({
+                    data: {
+                        funcionarioId,
+                        facialData: JSON.stringify(Array.from(descriptor)),
+                        metadata: {
+                            instruccion,
+                            capturaNumero: i + 1,
+                            fechaCaptura: new Date().toISOString(),
+                            metodo: 'registro-multiple',
+                        },
+                    },
+                });
+                console.log('  ✅ Registro guardado en BD con ID:', registro.id);
+                registrosCreados.push(registro);
+            }
+            console.log('\n📝 Actualizando flag facialDataRegistered...');
+            await this.prisma.funcionario.update({
+                where: { id: funcionarioId },
+                data: { facialDataRegistered: true },
+            });
+            console.log('✅ ========== REGISTRO MÚLTIPLE COMPLETADO ==========\n');
+            return {
+                message: 'Registro facial múltiple completado exitosamente',
+                funcionarioId,
+                registrosCreados: registrosCreados.length,
+                detalles: registrosCreados.map((r, i) => ({
+                    id: r.id,
+                    instruccion: metadata[`instruccion${i + 1}`],
+                })),
+            };
         }
-        const queryDescriptor = detection.descriptor;
-        const allFacialData = await this.prisma.facialData.findMany({
-            where: { activo: true },
+        catch (error) {
+            console.error('\n❌ ========== ERROR EN REGISTRO MÚLTIPLE ==========');
+            console.error('❌ Tipo de error:', error.constructor.name);
+            console.error('❌ Mensaje:', error.message);
+            console.error('❌ Stack:', error.stack);
+            console.error('❌ ================================================\n');
+            throw error;
+        }
+    }
+    async verificarYMarcar(foto) {
+        if (!foto) {
+            return {
+                success: false,
+                message: 'No se proporcionó ninguna foto',
+            };
+        }
+        const descriptorEntrada = await this.detectarRostro(foto.buffer);
+        if (!descriptorEntrada) {
+            return {
+                success: false,
+                message: 'No se detectó ningún rostro en la imagen',
+            };
+        }
+        const todosLosRegistros = await this.prisma.registroFacial.findMany({
             include: {
                 funcionario: {
                     include: {
@@ -159,204 +249,155 @@ let FacialRecognitionService = class FacialRecognitionService {
                 },
             },
         });
-        if (allFacialData.length === 0) {
-            throw new common_1.NotFoundException('No hay funcionarios registrados con datos faciales');
-        }
-        let bestMatch = null;
-        let bestDistance = 1.0;
-        for (const data of allFacialData) {
-            const storedDescriptor = new Float32Array(data.descriptores);
-            const distance = faceapi.euclideanDistance(queryDescriptor, storedDescriptor);
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                bestMatch = {
-                    funcionario: data.funcionario,
-                    distance,
-                    confidence: 1 - distance,
-                    threshold: Number(data.confianza),
-                };
-            }
-        }
-        if (!bestMatch || bestDistance > (1 - bestMatch.threshold)) {
+        if (todosLosRegistros.length === 0) {
             return {
                 success: false,
-                message: 'No se encontró coincidencia con ningún funcionario',
-                confidence: bestMatch ? bestMatch.confidence : 0,
+                message: 'No hay funcionarios registrados con datos faciales',
             };
         }
-        return {
-            success: true,
-            message: 'Funcionario identificado',
-            funcionario: {
-                id: bestMatch.funcionario.id,
-                nombre: bestMatch.funcionario.nombre,
-                apellido: bestMatch.funcionario.apellido,
-                cargo: bestMatch.funcionario.cargo,
-                dependencia: bestMatch.funcionario.dependencia,
-            },
-            confidence: bestMatch.confidence,
-            distance: bestDistance,
-        };
-    }
-    async registrarMarcajeFacial(imagePath, tipoMarcaje) {
-        const verificacion = await this.verificarRostro(imagePath);
-        if (!verificacion.success) {
-            throw new common_1.BadRequestException(verificacion.message);
+        let mejorCoincidencia = null;
+        let mejorDistancia = Infinity;
+        const UMBRAL = 0.6;
+        for (const registro of todosLosRegistros) {
+            try {
+                const descriptorGuardado = new Float32Array(JSON.parse(registro.facialData));
+                const distancia = faceapi.euclideanDistance(descriptorEntrada, descriptorGuardado);
+                if (distancia < mejorDistancia) {
+                    mejorDistancia = distancia;
+                    mejorCoincidencia = registro;
+                }
+            }
+            catch (error) {
+                console.error(`Error al comparar con registro ${registro.id}:`, error);
+            }
         }
-        const funcionarioId = verificacion.funcionario.id;
-        let tipo = tipoMarcaje;
-        if (!tipo) {
-            tipo = this.determinarTipoMarcaje();
+        if (!mejorCoincidencia || mejorDistancia > UMBRAL) {
+            return {
+                success: false,
+                message: 'Rostro no reconocido',
+                distancia: mejorDistancia,
+                umbral: UMBRAL,
+            };
         }
-        const configuracion = await this.prisma.configuracionHorario.findFirst({
-            where: { tipoMarcaje: tipo },
-        });
-        if (!configuracion) {
-            throw new common_1.BadRequestException('No hay configuración de horario para este tipo de marcaje');
-        }
-        const ahora = new Date();
-        const horaProgramada = new Date(configuracion.horaProgramada);
-        const horaLimite = new Date(horaProgramada);
-        horaLimite.setMinutes(horaLimite.getMinutes() + configuracion.toleranciaMinutos);
-        let minutosTardanza = 0;
-        if (ahora > horaLimite) {
-            minutosTardanza = Math.floor((ahora.getTime() - horaLimite.getTime()) / (1000 * 60));
-        }
+        const confianza = Math.round((1 - mejorDistancia) * 100);
+        const funcionario = mejorCoincidencia.funcionario;
+        const tipoMarcaje = await this.determinarTipoMarcaje(funcionario.id);
         const asistencia = await this.prisma.asistencia.create({
             data: {
-                funcionarioId,
-                fecha: ahora,
-                horaMarcaje: ahora,
-                tipoMarcaje: tipo,
-                minutosTardanza,
-                verificado: true,
+                funcionarioId: funcionario.id,
+                fecha: new Date(),
+                tipoMarcaje: tipoMarcaje,
+                metodoMarcaje: 'FACIAL',
             },
         });
-        const marcajeFacial = await this.prisma.marcajeFacial.create({
-            data: {
-                asistenciaId: asistencia.id,
-                fotoEvidencia: imagePath,
-                confidence: verificacion.confidence,
-            },
-        });
-        await this.notificationsService.notificarMarcaje(asistencia.id);
+        await this.calcularAtraso(asistencia.id);
         return {
             success: true,
-            message: 'Marcaje registrado exitosamente',
+            message: `Bienvenido ${funcionario.nombre} ${funcionario.apellido}`,
             asistencia: {
                 id: asistencia.id,
-                funcionario: verificacion.funcionario,
-                tipoMarcaje: asistencia.tipoMarcaje,
-                horaMarcaje: asistencia.horaMarcaje,
-                minutosTardanza: asistencia.minutosTardanza,
+                tipo: tipoMarcaje,
+                hora: asistencia.fecha,
             },
-            evidencia: {
-                fotoEvidencia: marcajeFacial.fotoEvidencia,
-                confidence: marcajeFacial.confidence,
+            funcionario: {
+                id: funcionario.id,
+                nombre: funcionario.nombre,
+                apellido: funcionario.apellido,
+                cargo: funcionario.cargo,
             },
+            confianza,
+            distancia: mejorDistancia,
+            umbral: UMBRAL,
         };
     }
-    determinarTipoMarcaje() {
-        const ahora = new Date();
-        const hora = ahora.getHours();
-        const minutos = ahora.getMinutes();
-        const tiempoEnMinutos = hora * 60 + minutos;
-        if (tiempoEnMinutos >= 7 * 60 && tiempoEnMinutos < 10 * 60) {
+    async determinarTipoMarcaje(funcionarioId) {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const marcajesHoy = await this.prisma.asistencia.findMany({
+            where: {
+                funcionarioId,
+                fecha: {
+                    gte: hoy,
+                },
+            },
+            orderBy: {
+                fecha: 'asc',
+            },
+        });
+        const tiposMarcados = marcajesHoy.map((m) => m.tipoMarcaje);
+        if (!tiposMarcados.includes('INGRESO_MANANA')) {
             return 'INGRESO_MANANA';
         }
-        else if (tiempoEnMinutos >= 11 * 60 && tiempoEnMinutos < 13 * 60) {
+        if (!tiposMarcados.includes('SALIDA_DESCANSO')) {
             return 'SALIDA_DESCANSO';
         }
-        else if (tiempoEnMinutos >= 13 * 60 && tiempoEnMinutos < 16 * 60) {
+        if (!tiposMarcados.includes('INGRESO_TARDE')) {
             return 'INGRESO_TARDE';
         }
-        else if (tiempoEnMinutos >= 16 * 60 && tiempoEnMinutos < 20 * 60) {
+        if (!tiposMarcados.includes('SALIDA_FINAL')) {
             return 'SALIDA_FINAL';
         }
-        if (tiempoEnMinutos < 7 * 60) {
-            throw new common_1.BadRequestException('Fuera de horario laboral');
-        }
-        else {
-            return 'SALIDA_FINAL';
+        return 'INGRESO_MANANA';
+    }
+    async calcularAtraso(asistenciaId) {
+        const asistencia = await this.prisma.asistencia.findUnique({
+            where: { id: asistenciaId },
+        });
+        if (!asistencia)
+            return;
+        const config = await this.prisma.configuracionHorario.findFirst({
+            where: { tipoMarcaje: asistencia.tipoMarcaje },
+        });
+        if (!config)
+            return;
+        const horaAsistencia = new Date(asistencia.fecha);
+        const [horaConfig, minConfig] = config.horaProgramada.split(':').map(Number);
+        const horaProgramada = new Date(asistencia.fecha);
+        horaProgramada.setHours(horaConfig, minConfig, 0, 0);
+        const horaLimite = new Date(horaProgramada);
+        horaLimite.setMinutes(horaLimite.getMinutes() + config.toleranciaMinutos);
+        if (horaAsistencia > horaLimite) {
+            const minutosTardanza = Math.floor((horaAsistencia.getTime() - horaLimite.getTime()) / (1000 * 60));
+            await this.prisma.asistencia.update({
+                where: { id: asistenciaId },
+                data: { minutosTardanza },
+            });
         }
     }
-    async obtenerDatosFaciales(funcionarioId) {
-        const facialData = await this.prisma.facialData.findUnique({
+    async obtenerEstado(funcionarioId) {
+        const registros = await this.prisma.registroFacial.findMany({
             where: { funcionarioId },
-            include: {
-                funcionario: true,
-            },
+            orderBy: { createdAt: 'desc' },
         });
-        if (!facialData) {
-            throw new common_1.NotFoundException('No hay datos faciales para este funcionario');
-        }
         return {
-            id: facialData.id,
-            funcionarioId: facialData.funcionarioId,
-            fotoReferencia: facialData.fotoReferencia,
-            activo: facialData.activo,
-            confianza: facialData.confianza,
-            createdAt: facialData.createdAt,
-            updatedAt: facialData.updatedAt,
-            funcionario: {
-                nombre: facialData.funcionario.nombre,
-                apellido: facialData.funcionario.apellido,
-                cargo: facialData.funcionario.cargo,
-            },
+            funcionarioId,
+            registrado: registros.length > 0,
+            cantidadRegistros: registros.length,
+            ultimoRegistro: registros[0]?.createdAt || null,
+            registros: registros.map((r) => ({
+                id: r.id,
+                metadata: r.metadata,
+                fecha: r.createdAt,
+            })),
         };
     }
-    async eliminarDatosFaciales(funcionarioId) {
-        const facialData = await this.prisma.facialData.findUnique({
-            where: { funcionarioId },
-        });
-        if (!facialData) {
-            throw new common_1.NotFoundException('No hay datos faciales para este funcionario');
-        }
-        if (fs.existsSync(facialData.fotoReferencia)) {
-            fs.unlinkSync(facialData.fotoReferencia);
-        }
-        await this.prisma.facialData.delete({
+    async eliminarRegistros(funcionarioId) {
+        const resultado = await this.prisma.registroFacial.deleteMany({
             where: { funcionarioId },
         });
         await this.prisma.funcionario.update({
             where: { id: funcionarioId },
-            data: {
-                facialDataRegistered: false
-            },
+            data: { facialDataRegistered: false },
         });
         return {
-            message: 'Datos faciales eliminados exitosamente',
+            message: 'Registros faciales eliminados',
+            eliminados: resultado.count,
         };
-    }
-    async listarFuncionariosConDatosFaciales() {
-        const facialData = await this.prisma.facialData.findMany({
-            where: { activo: true },
-            include: {
-                funcionario: true,
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
-        });
-        return facialData.map(data => ({
-            id: data.id,
-            funcionarioId: data.funcionarioId,
-            funcionario: {
-                nombre: data.funcionario.nombre,
-                apellido: data.funcionario.apellido,
-                cargo: data.funcionario.cargo,
-                dependencia: data.funcionario.dependencia,
-            },
-            fotoReferencia: data.fotoReferencia,
-            confianza: data.confianza,
-            createdAt: data.createdAt,
-        }));
     }
 };
 exports.FacialRecognitionService = FacialRecognitionService;
 exports.FacialRecognitionService = FacialRecognitionService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        notifications_service_1.NotificationsService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], FacialRecognitionService);
 //# sourceMappingURL=facial-recognition.service.js.map

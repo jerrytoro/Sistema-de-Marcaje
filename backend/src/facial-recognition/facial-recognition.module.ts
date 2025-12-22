@@ -4,8 +4,9 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { FacialRecognitionController } from './facial-recognition.controller';
 import { FacialRecognitionService } from './facial-recognition.service';
-import { PrismaService } from '../database/prisma.service';
-import { NotificationsModule } from '../notifications/notifications.module';
+import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsModule } from '../notifications/notifications.module'; // Si lo tienes
+import { PrismaModule } from '../prisma/prisma.module'; // Opcional si usas @Global
 
 @Module({
   imports: [
@@ -29,10 +30,14 @@ import { NotificationsModule } from '../notifications/notifications.module';
         fileSize: 5 * 1024 * 1024, // 5MB
       },
     }),
-    NotificationsModule
+    NotificationsModule, // Descomentar si tienes módulo de notificaciones
+    PrismaModule, // Solo si NO usaste @Global() en PrismaModule
   ],
   controllers: [FacialRecognitionController],
-  providers: [FacialRecognitionService, PrismaService],
+  providers: [
+    FacialRecognitionService,
+    PrismaService, // ✅ Agregar directamente si PrismaModule no es @Global
+  ],
   exports: [FacialRecognitionService],
 })
 export class FacialRecognitionModule {}

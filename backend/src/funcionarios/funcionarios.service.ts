@@ -78,11 +78,8 @@ export class FuncionariosService {
           },
         },
         registrosFaciales: {
-          where: {
-            activo: true,
-          },
           orderBy: {
-            fechaRegistro: 'desc',
+            createdAt: 'desc',
           },
           take: 5, // Últimos 5 registros faciales
         },
@@ -269,7 +266,7 @@ export class FuncionariosService {
     const registros = await this.prisma.registroFacial.findMany({
       where: { funcionarioId: id },
       orderBy: {
-        fechaRegistro: 'desc',
+        createdAt: 'desc',
       },
     });
 
@@ -332,7 +329,7 @@ export class FuncionariosService {
 
     // Total de registros faciales
     const totalRegistrosFaciales = await this.prisma.registroFacial.count({
-      where: { funcionarioId: id, activo: true },
+      where: { funcionarioId: id },
     });
 
     // Tardanzas totales

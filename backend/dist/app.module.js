@@ -21,6 +21,7 @@ const jwt_auth_guard_1 = require("./auth/guards/jwt-auth.guard");
 const facial_recognition_module_1 = require("./facial-recognition/facial-recognition.module");
 const notifications_module_1 = require("./notifications/notifications.module");
 const scheduled_tasks_module_1 = require("./scheduled-tasks/scheduled-tasks.module");
+const prisma_module_1 = require("./prisma/prisma.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -38,6 +39,7 @@ exports.AppModule = AppModule = __decorate([
             configuracion_horarios_module_1.ConfiguracionHorariosModule,
             asistencias_module_1.AsistenciasModule,
             reportes_module_1.ReportesModule,
+            prisma_module_1.PrismaModule,
             facial_recognition_module_1.FacialRecognitionModule,
             notifications_module_1.NotificationsModule,
             scheduled_tasks_module_1.ScheduledTasksModule,

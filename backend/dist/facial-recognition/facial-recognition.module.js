@@ -13,8 +13,9 @@ const multer_1 = require("multer");
 const path_1 = require("path");
 const facial_recognition_controller_1 = require("./facial-recognition.controller");
 const facial_recognition_service_1 = require("./facial-recognition.service");
-const prisma_service_1 = require("../database/prisma.service");
+const prisma_service_1 = require("../prisma/prisma.service");
 const notifications_module_1 = require("../notifications/notifications.module");
+const prisma_module_1 = require("../prisma/prisma.module");
 let FacialRecognitionModule = class FacialRecognitionModule {
 };
 exports.FacialRecognitionModule = FacialRecognitionModule;
@@ -41,10 +42,14 @@ exports.FacialRecognitionModule = FacialRecognitionModule = __decorate([
                     fileSize: 5 * 1024 * 1024,
                 },
             }),
-            notifications_module_1.NotificationsModule
+            notifications_module_1.NotificationsModule,
+            prisma_module_1.PrismaModule,
         ],
         controllers: [facial_recognition_controller_1.FacialRecognitionController],
-        providers: [facial_recognition_service_1.FacialRecognitionService, prisma_service_1.PrismaService],
+        providers: [
+            facial_recognition_service_1.FacialRecognitionService,
+            prisma_service_1.PrismaService,
+        ],
         exports: [facial_recognition_service_1.FacialRecognitionService],
     })
 ], FacialRecognitionModule);

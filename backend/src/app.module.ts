@@ -12,7 +12,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { FacialRecognitionModule } from './facial-recognition/facial-recognition.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ScheduledTasksModule } from './scheduled-tasks/scheduled-tasks.module';
-
+import { PrismaModule } from './prisma/prisma.module';
 /**
  * AppModule
  * Módulo raíz de la aplicación
@@ -45,6 +45,9 @@ import { ScheduledTasksModule } from './scheduled-tasks/scheduled-tasks.module';
 
     // Módulo de reportes
     ReportesModule,
+
+
+    PrismaModule,
 
     // ... otros módulos
     FacialRecognitionModule,

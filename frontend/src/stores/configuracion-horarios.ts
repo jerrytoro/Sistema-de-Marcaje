@@ -17,12 +17,26 @@ export const useConfiguracionHorariosStore = defineStore('configuracionHorarios'
       error.value = null;
 
       const result = await configuracionHorariosService.listar();
-      configuraciones.value = Array.isArray(result) ? result : [result];
       
-      // La primera o única configuración es la actual
-      if (configuraciones.value.length > 0) {
-        configuracionActual.value = configuraciones.value[0];
-      }
+      // ✅ Forzar limpieza y nueva asignación
+      configuraciones.value = [];
+      
+      const newConfigs = Array.isArray(result) ? result : [result];
+      
+      // ✅ Asignar en el siguiente tick para asegurar reactividad
+      setTimeout(() => {
+        configuraciones.value = newConfigs;
+        
+        // La primera o única configuración es la actual
+        if (newConfigs.length > 0) {
+          configuracionActual.value = newConfigs[0];
+        } else {
+          configuracionActual.value = null;
+        }
+        
+        console.log('✅ Configuraciones cargadas:', configuraciones.value);
+        console.log('✅ Configuración actual:', configuracionActual.value);
+      }, 0);
 
       return { success: true, data: result };
     } catch (err: any) {

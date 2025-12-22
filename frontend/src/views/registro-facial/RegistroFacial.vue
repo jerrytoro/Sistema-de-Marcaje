@@ -11,45 +11,47 @@
           <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
               <h1 class="mb-1">
-                <i class="bi bi-camera me-2"></i>
-                Registro Facial
+                <i class="bi bi-camera-video me-2"></i>
+                Registro Facial Mejorado
               </h1>
               <p class="text-muted mb-0">
-                Captura y registra el rostro de los funcionarios para reconocimiento facial
+                Captura múltiples fotos para mayor precisión en el reconocimiento
               </p>
             </div>
           </div>
 
-          <!-- Info Alert -->
-          <div class="alert alert-info d-flex align-items-center mb-4">
-            <i class="bi bi-info-circle-fill fs-4 me-3"></i>
-            <div>
-              <strong>Instrucciones:</strong><br>
-              1. Selecciona un funcionario<br>
-              2. Asegúrate de tener buena iluminación<br>
-              3. Captura una foto clara de tu rostro mirando de frente<br>
-              4. El sistema entrenará el reconocimiento facial automáticamente
-            </div>
+          <!-- Alert de Instrucciones -->
+          <div class="alert alert-info mb-4">
+            <h5 class="alert-heading">
+              <i class="bi bi-info-circle me-2"></i>
+              Instrucciones para mejor reconocimiento
+            </h5>
+            <ul class="mb-0">
+              <li>Se capturarán <strong>5 fotos</strong> desde diferentes ángulos</li>
+              <li>Mantén buena iluminación en tu rostro</li>
+              <li>Mira directamente a la cámara en cada captura</li>
+              <li>Evita usar lentes oscuros o gorras</li>
+            </ul>
           </div>
 
           <div class="row">
-            <!-- Columna Izquierda: Selección de Funcionario -->
-            <div class="col-md-4 mb-4">
-              <div class="card shadow-sm">
+            <!-- Selección de Funcionario -->
+            <div class="col-md-4">
+              <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
                   <h5 class="mb-0">
-                    <i class="bi bi-person me-2"></i>
+                    <i class="bi bi-person-badge me-2"></i>
                     Seleccionar Funcionario
                   </h5>
                 </div>
                 <div class="card-body">
                   <div class="mb-3">
-                    <label class="form-label">Buscar Funcionario</label>
+                    <label class="form-label">Buscar</label>
                     <input
                       type="text"
                       class="form-control"
+                      placeholder="Nombre o apellido..."
                       v-model="searchQuery"
-                      placeholder="Nombre, apellido..."
                     />
                   </div>
 
@@ -58,140 +60,151 @@
                       v-for="func in funcionariosFiltrados"
                       :key="func.id"
                       class="list-group-item list-group-item-action"
-                      :class="{ active: selectedFuncionario?.id === func.id }"
-                      @click="selectFuncionario(func)"
+                      :class="{ 'active': funcionarioSeleccionado?.id === func.id }"
+                      @click="seleccionarFuncionario(func)"
                     >
                       <div class="d-flex align-items-center">
-                        <div class="avatar-circle bg-primary text-white me-3">
+                        <div class="avatar me-2">
                           {{ func.nombre[0] }}{{ func.apellido[0] }}
                         </div>
                         <div>
-                          <h6 class="mb-0">{{ func.nombre }} {{ func.apellido }}</h6>
-                          <small>{{ func.cargo }}</small>
+                          <strong>{{ func.nombre }} {{ func.apellido }}</strong>
+                          <br>
+                          <small class="text-muted">{{ func.cargo }}</small>
                         </div>
                       </div>
                     </button>
-                  </div>
-
-                  <div v-if="funcionariosFiltrados.length === 0" class="text-center py-4 text-muted">
-                    No se encontraron funcionarios
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Columna Derecha: Captura de Rostro -->
+            <!-- Captura Facial -->
             <div class="col-md-8">
               <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
+                <div class="card-header" :class="camaraActiva ? 'bg-success text-white' : 'bg-secondary text-white'">
                   <h5 class="mb-0">
-                    <i class="bi bi-camera-video me-2"></i>
-                    Captura de Rostro
+                    <i class="bi bi-camera-video-fill me-2"></i>
+                    Captura Facial Múltiple
                   </h5>
                 </div>
                 <div class="card-body">
-                  <!-- Funcionario Seleccionado -->
-                  <div v-if="selectedFuncionario" class="alert alert-primary mb-4">
-                    <strong>Funcionario seleccionado:</strong><br>
-                    {{ selectedFuncionario.nombre }} {{ selectedFuncionario.apellido }} - {{ selectedFuncionario.cargo }}
+                  <!-- Información del Funcionario Seleccionado -->
+                  <div v-if="funcionarioSeleccionado" class="alert alert-success mb-3">
+                    <strong>
+                      <i class="bi bi-check-circle me-2"></i>
+                      Registrando a: {{ funcionarioSeleccionado.nombre }} {{ funcionarioSeleccionado.apellido }}
+                    </strong>
                   </div>
 
-                  <div v-else class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    Selecciona un funcionario primero
-                  </div>
-
-                  <!-- Video Preview -->
-                  <div class="text-center mb-4">
-                    <div class="camera-container" :class="{ 'camera-active': cameraActive }">
-                      <video
-                        ref="videoElement"
-                        autoplay
-                        playsinline
-                        :class="{ 'd-none': !cameraActive }"
-                      ></video>
-                      
-                      <canvas
-                        ref="canvasElement"
-                        class="d-none"
-                      ></canvas>
-
-                      <div v-if="capturedImage" class="captured-preview">
-                        <img :src="capturedImage" alt="Rostro capturado" />
-                      </div>
-
-                      <div v-if="!cameraActive && !capturedImage" class="camera-placeholder">
-                        <i class="bi bi-camera fs-1 text-muted"></i>
-                        <p class="text-muted mt-2">Cámara desactivada</p>
+                  <!-- Progreso de Capturas -->
+                  <div v-if="capturando" class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <span>Progreso: {{ fotosCapturadas.length }} / 5 fotos</span>
+                      <span class="badge bg-primary">{{ instruccionActual }}</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                      <div 
+                        class="progress-bar progress-bar-striped progress-bar-animated" 
+                        :style="{ width: (fotosCapturadas.length / 5 * 100) + '%' }"
+                      >
+                        {{ Math.round(fotosCapturadas.length / 5 * 100) }}%
                       </div>
                     </div>
                   </div>
 
-                  <!-- Controles -->
-                  <div class="d-flex gap-2 justify-content-center">
+                  <!-- Video Preview -->
+                  <div class="position-relative mb-3">
+                    <video
+                      ref="videoElement"
+                      autoplay
+                      playsinline
+                      class="w-100 rounded"
+                      :class="{ 'border-success': camaraActiva, 'border-secondary': !camaraActiva }"
+                      style="max-height: 480px; border: 3px solid;"
+                    ></video>
+                    
+                    <!-- Overlay de Instrucción -->
+                    <div v-if="capturando" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                         style="background: rgba(0,0,0,0.3); pointer-events: none;">
+                      <div class="text-center text-white">
+                        <h2><i class="bi bi-camera-fill"></i></h2>
+                        <h4>{{ instruccionActual }}</h4>
+                        <p>Captura en {{ countdown }}...</p>
+                      </div>
+                    </div>
+
+                    <canvas ref="canvasElement" style="display: none;"></canvas>
+                  </div>
+
+                  <!-- Miniaturas de Fotos Capturadas -->
+                  <div v-if="fotosCapturadas.length > 0" class="mb-3">
+                    <h6>Fotos Capturadas:</h6>
+                    <div class="d-flex gap-2 flex-wrap">
+                      <div v-for="(foto, index) in fotosCapturadas" :key="index" class="position-relative">
+                        <img :src="foto.dataUrl" class="rounded border" style="width: 100px; height: 100px; object-fit: cover;">
+                        <span class="position-absolute top-0 start-0 badge bg-primary m-1">{{ index + 1 }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Botones de Control -->
+                  <div class="d-flex gap-2">
                     <button
-                      v-if="!cameraActive"
-                      class="btn btn-primary"
-                      @click="startCamera"
-                      :disabled="!selectedFuncionario || loading"
+                      class="btn btn-success"
+                      @click="activarCamara"
+                      :disabled="!funcionarioSeleccionado || camaraActiva || cargando"
+                      v-if="!capturando"
                     >
                       <i class="bi bi-camera-video me-2"></i>
                       Activar Cámara
                     </button>
 
                     <button
-                      v-if="cameraActive && !capturedImage"
-                      class="btn btn-success btn-lg"
-                      @click="capturePhoto"
+                      class="btn btn-primary"
+                      @click="iniciarCaptura"
+                      :disabled="!camaraActiva || capturando || cargando"
+                      v-if="!capturando && fotosCapturadas.length === 0"
                     >
-                      <i class="bi bi-camera me-2"></i>
-                      Capturar Foto
+                      <i class="bi bi-play-circle me-2"></i>
+                      Iniciar Registro
                     </button>
 
                     <button
-                      v-if="capturedImage"
                       class="btn btn-warning"
-                      @click="retakePhoto"
+                      @click="reiniciarCaptura"
+                      :disabled="cargando"
+                      v-if="fotosCapturadas.length > 0 && fotosCapturadas.length < 5"
                     >
                       <i class="bi bi-arrow-counterclockwise me-2"></i>
-                      Tomar Otra
+                      Reiniciar
                     </button>
 
                     <button
-                      v-if="capturedImage"
                       class="btn btn-success"
-                      @click="registrarRostro"
-                      :disabled="loading"
+                      @click="guardarRegistro"
+                      :disabled="fotosCapturadas.length !== 5 || cargando"
+                      v-if="fotosCapturadas.length === 5"
                     >
-                      <span v-if="loading">
+                      <span v-if="cargando">
                         <span class="spinner-border spinner-border-sm me-2"></span>
-                        Registrando...
+                        Guardando...
                       </span>
                       <span v-else>
-                        <i class="bi bi-check-circle me-2"></i>
-                        Registrar Rostro
+                        <i class="bi bi-save me-2"></i>
+                        Guardar Registro (5/5)
                       </span>
                     </button>
 
                     <button
-                      v-if="cameraActive"
                       class="btn btn-danger"
-                      @click="stopCamera"
+                      @click="detenerCamara"
+                      :disabled="cargando"
+                      v-if="camaraActiva"
                     >
-                      <i class="bi bi-x-circle me-2"></i>
+                      <i class="bi bi-camera-video-off me-2"></i>
                       Detener Cámara
                     </button>
-                  </div>
-
-                  <!-- Resultado -->
-                  <div v-if="facialStore.registroExitoso" class="alert alert-success mt-4">
-                    <i class="bi bi-check-circle-fill me-2"></i>
-                    ¡Rostro registrado exitosamente! El funcionario ya puede usar reconocimiento facial.
-                  </div>
-
-                  <div v-if="facialStore.error" class="alert alert-danger mt-4">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    {{ facialStore.error }}
                   </div>
                 </div>
               </div>
@@ -204,177 +217,289 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { useFuncionariosStore } from '@/stores/funcionarios';
-import { useFacialRecognitionStore } from '@/stores/facial-recognition';
+import { ref, computed, onUnmounted } from 'vue';
 import Navbar from '@/components/layout/Navbar.vue';
 import Sidebar from '@/components/layout/Sidebar.vue';
+import api from '@/services/api';
 
-const funcionariosStore = useFuncionariosStore();
-const facialStore = useFacialRecognitionStore();
+// ✅ Interfaz para Funcionario
+interface Funcionario {
+  id: number;
+  nombre: string;
+  apellido: string;
+  cargo: string;
+  dependencia?: string;
+  facialDataRegistered?: boolean;
+  usuario?: any;
+}
+
 const sidebarOpen = ref(false);
-
 const searchQuery = ref('');
-const selectedFuncionario = ref<any>(null);
-const cameraActive = ref(false);
-const capturedImage = ref<string | null>(null);
-const loading = ref(false);
+const funcionarios = ref<Funcionario[]>([]);
+const funcionarioSeleccionado = ref<Funcionario | null>(null);
+const camaraActiva = ref(false);
+const capturando = ref(false);
+const cargando = ref(false);
+const fotosCapturadas = ref<any[]>([]);
+const instruccionActual = ref('');
+const countdown = ref(3);
 
 const videoElement = ref<HTMLVideoElement | null>(null);
 const canvasElement = ref<HTMLCanvasElement | null>(null);
 let stream: MediaStream | null = null;
+let countdownInterval: any = null;
+
+const instrucciones = [
+  'Mira al frente',
+  'Gira ligeramente a la izquierda',
+  'Gira ligeramente a la derecha',
+  'Inclina un poco la cabeza hacia arriba',
+  'Posición normal - última foto'
+];
 
 const funcionariosFiltrados = computed(() => {
-  if (!searchQuery.value) {
-    return funcionariosStore.funcionarios;
-  }
-
+  if (!searchQuery.value) return funcionarios.value;
   const query = searchQuery.value.toLowerCase();
-  return funcionariosStore.funcionarios.filter((f: any) =>
+  return funcionarios.value.filter(f => 
     f.nombre.toLowerCase().includes(query) ||
     f.apellido.toLowerCase().includes(query) ||
     f.cargo.toLowerCase().includes(query)
   );
 });
 
-function selectFuncionario(funcionario: any) {
-  selectedFuncionario.value = funcionario;
-  facialStore.registroExitoso = false;
-  facialStore.error = null;
+async function cargarFuncionarios() {
+  try {
+    const response = await api.get('/funcionarios') as any;
+    
+    // ✅ Manejar diferentes formatos de respuesta
+    if (Array.isArray(response)) {
+      funcionarios.value = response;
+    } else if (response.data && Array.isArray(response.data)) {
+      funcionarios.value = response.data;
+    } else {
+      funcionarios.value = [];
+    }
+  } catch (error) {
+    console.error('Error al cargar funcionarios:', error);
+    alert('Error al cargar la lista de funcionarios');
+    funcionarios.value = [];
+  }
 }
 
-async function startCamera() {
+function seleccionarFuncionario(func: Funcionario) {
+  funcionarioSeleccionado.value = func;
+  fotosCapturadas.value = [];
+}
+
+async function activarCamara() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({
       video: {
-        width: { ideal: 640 },
-        height: { ideal: 480 },
-        facingMode: 'user',
-      },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: 'user'
+      }
     });
 
     if (videoElement.value) {
       videoElement.value.srcObject = stream;
-      cameraActive.value = true;
+      camaraActiva.value = true;
     }
   } catch (error) {
-    console.error('Error al acceder a la cámara:', error);
+    console.error('Error al activar la cámara:', error);
     alert('No se pudo acceder a la cámara. Verifica los permisos.');
   }
 }
 
-function stopCamera() {
+function detenerCamara() {
   if (stream) {
     stream.getTracks().forEach(track => track.stop());
     stream = null;
   }
-  cameraActive.value = false;
-  capturedImage.value = null;
+  if (videoElement.value) {
+    videoElement.value.srcObject = null;
+  }
+  camaraActiva.value = false;
+  capturando.value = false;
+  countdown.value = 3;
+  if (countdownInterval) clearInterval(countdownInterval);
 }
 
-function capturePhoto() {
+function iniciarCaptura() {
+  capturando.value = true;
+  fotosCapturadas.value = [];
+  capturarSiguienteFoto(0);
+}
+
+function capturarSiguienteFoto(index: number) {
+  if (index >= 5) {
+    capturando.value = false;
+    return;
+  }
+
+  instruccionActual.value = instrucciones[index];
+  countdown.value = 3;
+
+  countdownInterval = setInterval(() => {
+    countdown.value--;
+    
+    if (countdown.value === 0) {
+      clearInterval(countdownInterval);
+      capturarFoto(index);
+      
+      setTimeout(() => {
+        capturarSiguienteFoto(index + 1);
+      }, 500);
+    }
+  }, 1000);
+}
+
+async function capturarFoto(index: number) {
   if (!videoElement.value || !canvasElement.value) return;
 
   const video = videoElement.value;
   const canvas = canvasElement.value;
-
+  
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-
+  
   const ctx = canvas.getContext('2d');
-  if (ctx) {
-    ctx.drawImage(video, 0, 0);
-    capturedImage.value = canvas.toDataURL('image/jpeg', 0.9);
+  if (!ctx) return;
+  
+  ctx.drawImage(video, 0, 0);
+  
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+  const blob = await fetch(dataUrl).then(r => r.blob());
+  
+  fotosCapturadas.value.push({
+    index,
+    instruccion: instrucciones[index],
+    dataUrl,
+    blob
+  });
+}
+
+function reiniciarCaptura() {
+  fotosCapturadas.value = [];
+  capturando.value = false;
+  countdown.value = 3;
+  if (countdownInterval) clearInterval(countdownInterval);
+}
+
+// async function guardarRegistro() {
+//   if (!funcionarioSeleccionado.value || fotosCapturadas.value.length !== 5) return;
+
+//   try {
+//     cargando.value = true;
+
+//     const formData = new FormData();
+    
+//     // Agregar cada foto con su índice
+//     fotosCapturadas.value.forEach((foto, index) => {
+//       formData.append(`foto${index + 1}`, foto.blob, `foto${index + 1}.jpg`);
+//       formData.append(`instruccion${index + 1}`, foto.instruccion);
+//     });
+
+//     const response = await fetch(
+//       `${import.meta.env.VITE_API_URL}/facial-recognition/register-multiple/${funcionarioSeleccionado.value.id}`,
+//       {
+//         method: 'POST',
+//         headers: {
+//           'Authorization': `Bearer ${localStorage.getItem('token')}`
+//         },
+//         body: formData
+//       }
+//     );
+
+//     if (!response.ok) {
+//       throw new Error('Error al registrar datos faciales');
+//     }
+
+//     const result = await response.json();
+    
+//     alert(`✅ Registro facial completado exitosamente!\n\nSe guardaron ${result.registrosCreados || 5} fotos para mejor reconocimiento.`);
+    
+//     // Limpiar
+//     fotosCapturadas.value = [];
+//     funcionarioSeleccionado.value = null;
+//     detenerCamara();
+//     await cargarFuncionarios();
+    
+//   } catch (error: any) {
+//     console.error('Error al guardar registro:', error);
+//     alert('❌ Error al guardar el registro facial: ' + error.message);
+//   } finally {
+//     cargando.value = false;
+//   }
+// }
+async function guardarRegistro() {
+  if (!funcionarioSeleccionado.value || fotosCapturadas.value.length !== 5) return;
+
+  try {
+    cargando.value = true;
+
+    const formData = new FormData();
+    
+    // ✅ CORRECTO: Todas las fotos con el mismo nombre "foto"
+    fotosCapturadas.value.forEach((foto, index) => {
+      formData.append('foto', foto.blob, `foto${index + 1}.jpg`);
+    });
+    
+    // ✅ Agregar metadata como campos separados
+    fotosCapturadas.value.forEach((foto, index) => {
+      formData.append(`instruccion${index + 1}`, foto.instruccion);
+    });
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/facial-recognition/register-multiple/${funcionarioSeleccionado.value.id}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Error al registrar datos faciales');
+    }
+
+    const result = await response.json();
+    
+    alert(`✅ Registro facial completado exitosamente!\n\nSe guardaron ${result.registrosCreados || 5} fotos para mejor reconocimiento.`);
+    
+    fotosCapturadas.value = [];
+    funcionarioSeleccionado.value = null;
+    detenerCamara();
+    await cargarFuncionarios();
+    
+  } catch (error: any) {
+    console.error('Error al guardar registro:', error);
+    alert('❌ Error al guardar el registro facial: ' + error.message);
+  } finally {
+    cargando.value = false;
   }
 }
-
-function retakePhoto() {
-  capturedImage.value = null;
-  facialStore.error = null;
-}
-
-async function registrarRostro() {
-  if (!selectedFuncionario.value || !capturedImage.value) return;
-
-  loading.value = true;
-
-  // Convertir Data URL a Blob
-  const response = await fetch(capturedImage.value);
-  const blob = await response.blob();
-
-  const result = await facialStore.registrarRostro(selectedFuncionario.value.id, blob);
-
-  if (result.success) {
-    stopCamera();
-    setTimeout(() => {
-      facialStore.registroExitoso = false;
-      selectedFuncionario.value = null;
-    }, 3000);
-  }
-
-  loading.value = false;
-}
-
-onMounted(() => {
-  funcionariosStore.loadFuncionarios();
+onUnmounted(() => {
+  detenerCamara();
 });
 
-onBeforeUnmount(() => {
-  stopCamera();
-});
+// Cargar funcionarios al montar
+cargarFuncionarios();
 </script>
 
 <style scoped>
-.avatar-circle {
+.avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  display: flex;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-}
-
-.camera-container {
-  position: relative;
-  width: 100%;
-  max-width: 640px;
-  height: 480px;
-  margin: 0 auto;
-  background: #000;
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.camera-container video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.camera-active {
-  border: 3px solid #28a745;
-}
-
-.captured-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.camera-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #6c757d;
-}
-
-.list-group-item.active {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
+  font-size: 0.9rem;
 }
 </style>

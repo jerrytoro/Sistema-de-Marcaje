@@ -52,11 +52,11 @@ export declare class FuncionariosService {
             createdAt: Date;
         };
         registrosFaciales: {
+            facialData: string;
             id: number;
-            activo: boolean;
-            fechaRegistro: Date;
+            createdAt: Date;
             funcionarioId: number;
-            embedding: string;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
         }[];
         asistencias: {
             id: number;
@@ -65,6 +65,7 @@ export declare class FuncionariosService {
             funcionarioId: number;
             horaMarcaje: Date;
             tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+            metodoMarcaje: string | null;
             minutosTardanza: number;
             verificado: boolean;
             observacion: string | null;
@@ -183,11 +184,11 @@ export declare class FuncionariosService {
         facialDataRegistered: boolean;
     }>;
     getRegistrosFaciales(id: number): Promise<{
+        facialData: string;
         id: number;
-        activo: boolean;
-        fechaRegistro: Date;
+        createdAt: Date;
         funcionarioId: number;
-        embedding: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
     }[]>;
     getAsistencias(id: number, mes?: number, anio?: number): Promise<{
         id: number;
@@ -196,6 +197,7 @@ export declare class FuncionariosService {
         funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         verificado: boolean;
         observacion: string | null;

@@ -3,15 +3,11 @@ import {
   Post,
   Get,
   Param,
-  UseInterceptors,
-  UploadedFile,
-  UploadedFiles,
-  ParseIntPipe,
   Body,
+  ParseIntPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { FacialRecognitionService } from './facial-recognition.service';
 
 @Controller('facial-recognition')
@@ -21,73 +17,44 @@ export class FacialRecognitionController {
   ) {}
 
   /**
-   * Registrar datos faciales (Sistema antiguo - 1 foto)
-   * POST /facial-recognition/register/:id
+   * Registrar descriptores faciales (procesados en frontend)
+   * POST /api/facial-recognition/registrar-descriptores/:id
    */
-  @Post('register/:id')
-  @UseInterceptors(FileInterceptor('foto'))
-  async registrar(
+  @Post('registrar-descriptores/:id')
+  @HttpCode(HttpStatus.OK)
+  async registrarDescriptores(
     @Param('id', ParseIntPipe) funcionarioId: number,
-    @UploadedFile() foto: Express.Multer.File,
-  ) {
-    return this.facialRecognitionService.registrarDatosFaciales(
-      funcionarioId,
-      foto,
-    );
-  }
-
-  /**
-   * Registrar datos faciales MÚLTIPLES (Sistema mejorado - 5 fotos)
-   * POST /facial-recognition/register-multiple/:id
-   */
-  // @Post('register-multiple/:id')
-  // @UseInterceptors(FilesInterceptor('foto', 5)) // Hasta 5 archivos
-  // async registrarMultiple(
-  //   @Param('id', ParseIntPipe) funcionarioId: number,
-  //   @UploadedFiles() fotos: Express.Multer.File[],
-  //   @Body() body: any,
-  // ) {
-  //   return this.facialRecognitionService.registrarMultiple(
-  //     funcionarioId,
-  //     fotos,
-  //     body,
-  //   );
-  // }
-  @Post('register-multiple/:id')
-  @UseInterceptors(FilesInterceptor('foto', 5))
-  async registrarMultiple(
-    @Param('id', ParseIntPipe) funcionarioId: number,
-    @UploadedFiles() fotos: Express.Multer.File[],
     @Body() body: any,
   ) {
-    // ✅ AGREGAR ESTOS LOGS
-    console.log('🎯 ===== CONTROLLER: register-multiple =====');
+    console.log('🎯 ===== CONTROLLER: registrar-descriptores =====');
     console.log('📝 Funcionario ID:', funcionarioId);
-    console.log('📝 Fotos recibidas:', fotos?.length);
-    console.log('📝 Body recibido:', body);
-    console.log('📝 Nombres de archivos:', fotos?.map(f => f.originalname));
+    console.log('📝 Body recibido:', JSON.stringify(body).substring(0, 200));
+    console.log('📝 Descriptores:', body.descriptores?.length);
     console.log('========================================');
-    
-    return this.facialRecognitionService.registrarMultiple(
+
+    return this.facialRecognitionService.registrarDescriptores(
       funcionarioId,
-      fotos,
-      body,
+      body.descriptores,
     );
-  }
-  /**
-   * Verificar rostro y registrar marcaje
-   * POST /facial-recognition/marcar
-   */
-  @Post('marcar')
-  @HttpCode(HttpStatus.OK)
-  @UseInterceptors(FileInterceptor('foto'))
-  async marcar(@UploadedFile() foto: Express.Multer.File) {
-    return this.facialRecognitionService.verificarYMarcar(foto);
   }
 
   /**
-   * Obtener estado del reconocimiento facial de un funcionario
-   * GET /facial-recognition/status/:id
+   * Verificar descriptor y marcar asistencia
+   * POST /api/facial-recognition/verificar-descriptor
+   */
+  @Post('verificar-descriptor')
+  @HttpCode(HttpStatus.OK)
+  async verificarDescriptor(@Body() body: any) {
+    console.log('🎯 ===== CONTROLLER: verificar-descriptor =====');
+    console.log('📝 Descriptor recibido:', body.descriptor?.length, 'valores');
+    console.log('========================================');
+
+    return this.facialRecognitionService.verificarDescriptor(body.descriptor);
+  }
+
+  /**
+   * Obtener estado del reconocimiento facial
+   * GET /api/facial-recognition/status/:id
    */
   @Get('status/:id')
   async obtenerEstado(@Param('id', ParseIntPipe) funcionarioId: number) {
@@ -95,8 +62,8 @@ export class FacialRecognitionController {
   }
 
   /**
-   * Eliminar registros faciales de un funcionario
-   * POST /facial-recognition/delete/:id
+   * Eliminar registros faciales
+   * POST /api/facial-recognition/delete/:id
    */
   @Post('delete/:id')
   async eliminarRegistros(@Param('id', ParseIntPipe) funcionarioId: number) {

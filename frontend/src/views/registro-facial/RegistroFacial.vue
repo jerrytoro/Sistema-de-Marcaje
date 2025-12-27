@@ -12,10 +12,10 @@
             <div>
               <h1 class="mb-1">
                 <i class="bi bi-camera-video me-2"></i>
-                Registro Facial Mejorado
+                Registro Facial (Procesamiento en Navegador)
               </h1>
               <p class="text-muted mb-0">
-                Captura múltiples fotos para mayor precisión en el reconocimiento
+                Captura 5 fotos para mayor precisión - Todo se procesa en tu navegador
               </p>
             </div>
           </div>
@@ -24,14 +24,25 @@
           <div class="alert alert-info mb-4">
             <h5 class="alert-heading">
               <i class="bi bi-info-circle me-2"></i>
-              Instrucciones para mejor reconocimiento
+              Instrucciones
             </h5>
             <ul class="mb-0">
               <li>Se capturarán <strong>5 fotos</strong> desde diferentes ángulos</li>
-              <li>Mantén buena iluminación en tu rostro</li>
-              <li>Mira directamente a la cámara en cada captura</li>
-              <li>Evita usar lentes oscuros o gorras</li>
+              <li>El reconocimiento facial se procesa <strong>en tu navegador</strong></li>
+              <li>Solo se envían datos numéricos al servidor (no imágenes)</li>
+              <li>Mantén buena iluminación y mira a la cámara</li>
             </ul>
+          </div>
+
+          <!-- Estado de Carga de Modelos -->
+          <div v-if="cargandoModelos" class="alert alert-warning">
+            <div class="d-flex align-items-center">
+              <div class="spinner-border spinner-border-sm me-3"></div>
+              <div>
+                <strong>Cargando modelos de IA...</strong><br>
+                <small>Por favor espera, esto solo ocurre la primera vez</small>
+              </div>
+            </div>
           </div>
 
           <div class="row">
@@ -85,11 +96,11 @@
                 <div class="card-header" :class="camaraActiva ? 'bg-success text-white' : 'bg-secondary text-white'">
                   <h5 class="mb-0">
                     <i class="bi bi-camera-video-fill me-2"></i>
-                    Captura Facial Múltiple
+                    Captura Facial - Procesamiento Local
                   </h5>
                 </div>
                 <div class="card-body">
-                  <!-- Información del Funcionario Seleccionado -->
+                  <!-- Información del Funcionario -->
                   <div v-if="funcionarioSeleccionado" class="alert alert-success mb-3">
                     <strong>
                       <i class="bi bi-check-circle me-2"></i>
@@ -97,23 +108,24 @@
                     </strong>
                   </div>
 
-                  <!-- Progreso de Capturas -->
-                  <div v-if="capturando" class="mb-3">
+                  <!-- Progreso -->
+                  <div v-if="capturando || procesandoFotos" class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                      <span>Progreso: {{ fotosCapturadas.length }} / 5 fotos</span>
+                      <span v-if="!procesandoFotos">Capturando: {{ fotosCapturadas.length }} / 5</span>
+                      <span v-else>Procesando descriptores faciales: {{ descriptoresProcesados.length }} / 5</span>
                       <span class="badge bg-primary">{{ instruccionActual }}</span>
                     </div>
                     <div class="progress" style="height: 25px;">
                       <div 
                         class="progress-bar progress-bar-striped progress-bar-animated" 
-                        :style="{ width: (fotosCapturadas.length / 5 * 100) + '%' }"
+                        :style="{ width: progresoTotal + '%' }"
                       >
-                        {{ Math.round(fotosCapturadas.length / 5 * 100) }}%
+                        {{ progresoTotal }}%
                       </div>
                     </div>
                   </div>
 
-                  <!-- Video Preview -->
+                  <!-- Video -->
                   <div class="position-relative mb-3">
                     <video
                       ref="videoElement"
@@ -124,7 +136,7 @@
                       style="max-height: 480px; border: 3px solid;"
                     ></video>
                     
-                    <!-- Overlay de Instrucción -->
+                    <!-- Overlay -->
                     <div v-if="capturando" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
                          style="background: rgba(0,0,0,0.3); pointer-events: none;">
                       <div class="text-center text-white">
@@ -134,27 +146,40 @@
                       </div>
                     </div>
 
+                    <!-- Overlay Procesando -->
+                    <div v-if="procesandoFotos" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                         style="background: rgba(0,0,0,0.7); pointer-events: none;">
+                      <div class="text-center text-white">
+                        <div class="spinner-border mb-3" style="width: 4rem; height: 4rem;"></div>
+                        <h4>Procesando reconocimiento facial...</h4>
+                        <p>{{ descriptoresProcesados.length }} / 5 completados</p>
+                      </div>
+                    </div>
+
                     <canvas ref="canvasElement" style="display: none;"></canvas>
                   </div>
 
-                  <!-- Miniaturas de Fotos Capturadas -->
-                  <div v-if="fotosCapturadas.length > 0" class="mb-3">
+                  <!-- Miniaturas -->
+                  <div v-if="fotosCapturadas.length > 0 && !procesandoFotos" class="mb-3">
                     <h6>Fotos Capturadas:</h6>
                     <div class="d-flex gap-2 flex-wrap">
                       <div v-for="(foto, index) in fotosCapturadas" :key="index" class="position-relative">
                         <img :src="foto.dataUrl" class="rounded border" style="width: 100px; height: 100px; object-fit: cover;">
                         <span class="position-absolute top-0 start-0 badge bg-primary m-1">{{ index + 1 }}</span>
+                        <span v-if="descriptoresProcesados[index]" class="position-absolute bottom-0 end-0 badge bg-success m-1">
+                          <i class="bi bi-check-circle"></i>
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Botones de Control -->
+                  <!-- Botones -->
                   <div class="d-flex gap-2">
                     <button
                       class="btn btn-success"
                       @click="activarCamara"
-                      :disabled="!funcionarioSeleccionado || camaraActiva || cargando"
-                      v-if="!capturando"
+                      :disabled="!funcionarioSeleccionado || camaraActiva || cargandoModelos || cargando"
+                      v-if="!capturando && !procesandoFotos"
                     >
                       <i class="bi bi-camera-video me-2"></i>
                       Activar Cámara
@@ -163,8 +188,8 @@
                     <button
                       class="btn btn-primary"
                       @click="iniciarCaptura"
-                      :disabled="!camaraActiva || capturando || cargando"
-                      v-if="!capturando && fotosCapturadas.length === 0"
+                      :disabled="!camaraActiva || capturando || cargandoModelos || cargando"
+                      v-if="!capturando && !procesandoFotos && fotosCapturadas.length === 0"
                     >
                       <i class="bi bi-play-circle me-2"></i>
                       Iniciar Registro
@@ -173,8 +198,8 @@
                     <button
                       class="btn btn-warning"
                       @click="reiniciarCaptura"
-                      :disabled="cargando"
-                      v-if="fotosCapturadas.length > 0 && fotosCapturadas.length < 5"
+                      :disabled="cargando || procesandoFotos"
+                      v-if="fotosCapturadas.length > 0 && descriptoresProcesados.length < 5"
                     >
                       <i class="bi bi-arrow-counterclockwise me-2"></i>
                       Reiniciar
@@ -183,8 +208,8 @@
                     <button
                       class="btn btn-success"
                       @click="guardarRegistro"
-                      :disabled="fotosCapturadas.length !== 5 || cargando"
-                      v-if="fotosCapturadas.length === 5"
+                      :disabled="descriptoresProcesados.length !== 5 || cargando"
+                      v-if="descriptoresProcesados.length === 5 && !procesandoFotos"
                     >
                       <span v-if="cargando">
                         <span class="spinner-border spinner-border-sm me-2"></span>
@@ -199,8 +224,8 @@
                     <button
                       class="btn btn-danger"
                       @click="detenerCamara"
-                      :disabled="cargando"
-                      v-if="camaraActiva"
+                      :disabled="cargando || procesandoFotos"
+                      v-if="camaraActiva && !capturando"
                     >
                       <i class="bi bi-camera-video-off me-2"></i>
                       Detener Cámara
@@ -217,20 +242,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import Navbar from '@/components/layout/Navbar.vue';
 import Sidebar from '@/components/layout/Sidebar.vue';
+import * as faceapi from 'face-api.js';
 import api from '@/services/api';
 
-// ✅ Interfaz para Funcionario
 interface Funcionario {
   id: number;
   nombre: string;
   apellido: string;
   cargo: string;
   dependencia?: string;
-  facialDataRegistered?: boolean;
-  usuario?: any;
 }
 
 const sidebarOpen = ref(false);
@@ -239,8 +262,12 @@ const funcionarios = ref<Funcionario[]>([]);
 const funcionarioSeleccionado = ref<Funcionario | null>(null);
 const camaraActiva = ref(false);
 const capturando = ref(false);
+const procesandoFotos = ref(false);
 const cargando = ref(false);
+const cargandoModelos = ref(true);
+
 const fotosCapturadas = ref<any[]>([]);
+const descriptoresProcesados = ref<any[]>([]);
 const instruccionActual = ref('');
 const countdown = ref(3);
 
@@ -267,28 +294,50 @@ const funcionariosFiltrados = computed(() => {
   );
 });
 
+const progresoTotal = computed(() => {
+  if (procesandoFotos.value) {
+    return Math.round((descriptoresProcesados.value.length / 5) * 100);
+  }
+  return Math.round((fotosCapturadas.value.length / 5) * 100);
+});
+
+// Cargar modelos de face-api.js
+async function cargarModelos() {
+  try {
+    cargandoModelos.value = true;
+    console.log('🔄 Cargando modelos de face-api.js...');
+    
+    const MODEL_URL = '/models'; // Debes copiar los modelos a public/models
+    
+    await Promise.all([
+      faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+    ]);
+    
+    console.log('✅ Modelos cargados exitosamente');
+    cargandoModelos.value = false;
+  } catch (error) {
+    console.error('❌ Error al cargar modelos:', error);
+    alert('Error al cargar modelos de reconocimiento facial. Verifica que los modelos estén en /public/models');
+    cargandoModelos.value = false;
+  }
+}
+
 async function cargarFuncionarios() {
   try {
     const response = await api.get('/funcionarios') as any;
-    
-    // ✅ Manejar diferentes formatos de respuesta
-    if (Array.isArray(response)) {
-      funcionarios.value = response;
-    } else if (response.data && Array.isArray(response.data)) {
-      funcionarios.value = response.data;
-    } else {
-      funcionarios.value = [];
-    }
+    funcionarios.value = Array.isArray(response) ? response : (response.data || []);
   } catch (error) {
     console.error('Error al cargar funcionarios:', error);
     alert('Error al cargar la lista de funcionarios');
-    funcionarios.value = [];
   }
 }
 
 function seleccionarFuncionario(func: Funcionario) {
   funcionarioSeleccionado.value = func;
   fotosCapturadas.value = [];
+  descriptoresProcesados.value = [];
 }
 
 async function activarCamara() {
@@ -328,12 +377,14 @@ function detenerCamara() {
 function iniciarCaptura() {
   capturando.value = true;
   fotosCapturadas.value = [];
+  descriptoresProcesados.value = [];
   capturarSiguienteFoto(0);
 }
 
 function capturarSiguienteFoto(index: number) {
   if (index >= 5) {
     capturando.value = false;
+    procesarTodasLasFotos();
     return;
   }
 
@@ -369,124 +420,107 @@ async function capturarFoto(index: number) {
   ctx.drawImage(video, 0, 0);
   
   const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-  const blob = await fetch(dataUrl).then(r => r.blob());
   
   fotosCapturadas.value.push({
     index,
     instruccion: instrucciones[index],
     dataUrl,
-    blob
   });
 }
 
-function reiniciarCaptura() {
-  fotosCapturadas.value = [];
-  capturando.value = false;
-  countdown.value = 3;
-  if (countdownInterval) clearInterval(countdownInterval);
+async function procesarTodasLasFotos() {
+  procesandoFotos.value = true;
+  descriptoresProcesados.value = [];
+  
+  console.log('🔄 Procesando fotos con face-api.js...');
+  
+  for (let i = 0; i < fotosCapturadas.value.length; i++) {
+    try {
+      const foto = fotosCapturadas.value[i];
+      
+      // Crear imagen desde dataUrl
+      const img = await faceapi.fetchImage(foto.dataUrl);
+      
+      // Detectar rostro y extraer descriptor
+      const detection = await faceapi
+        .detectSingleFace(img)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+      
+      if (!detection) {
+        throw new Error(`No se detectó rostro en foto ${i + 1}`);
+      }
+      
+      // Convertir Float32Array a Array normal
+      const descriptor = Array.from(detection.descriptor);
+      
+      descriptoresProcesados.value.push({
+        descriptor,
+        instruccion: foto.instruccion
+      });
+      
+      console.log(`✅ Foto ${i + 1}/5 procesada`);
+      
+    } catch (error: any) {
+      console.error(`❌ Error en foto ${i + 1}:`, error);
+      alert(`Error al procesar foto ${i + 1}: ${error.message}`);
+      procesandoFotos.value = false;
+      return;
+    }
+  }
+  
+  procesandoFotos.value = false;
+  console.log('✅ Todas las fotos procesadas');
 }
 
-// async function guardarRegistro() {
-//   if (!funcionarioSeleccionado.value || fotosCapturadas.value.length !== 5) return;
-
-//   try {
-//     cargando.value = true;
-
-//     const formData = new FormData();
-    
-//     // Agregar cada foto con su índice
-//     fotosCapturadas.value.forEach((foto, index) => {
-//       formData.append(`foto${index + 1}`, foto.blob, `foto${index + 1}.jpg`);
-//       formData.append(`instruccion${index + 1}`, foto.instruccion);
-//     });
-
-//     const response = await fetch(
-//       `${import.meta.env.VITE_API_URL}/facial-recognition/register-multiple/${funcionarioSeleccionado.value.id}`,
-//       {
-//         method: 'POST',
-//         headers: {
-//           'Authorization': `Bearer ${localStorage.getItem('token')}`
-//         },
-//         body: formData
-//       }
-//     );
-
-//     if (!response.ok) {
-//       throw new Error('Error al registrar datos faciales');
-//     }
-
-//     const result = await response.json();
-    
-//     alert(`✅ Registro facial completado exitosamente!\n\nSe guardaron ${result.registrosCreados || 5} fotos para mejor reconocimiento.`);
-    
-//     // Limpiar
-//     fotosCapturadas.value = [];
-//     funcionarioSeleccionado.value = null;
-//     detenerCamara();
-//     await cargarFuncionarios();
-    
-//   } catch (error: any) {
-//     console.error('Error al guardar registro:', error);
-//     alert('❌ Error al guardar el registro facial: ' + error.message);
-//   } finally {
-//     cargando.value = false;
-//   }
-// }
 async function guardarRegistro() {
-  if (!funcionarioSeleccionado.value || fotosCapturadas.value.length !== 5) return;
+  if (!funcionarioSeleccionado.value || descriptoresProcesados.value.length !== 5) return;
 
   try {
     cargando.value = true;
 
-    const formData = new FormData();
+    console.log('📤 Enviando descriptores al servidor...');
     
-    // ✅ CORRECTO: Todas las fotos con el mismo nombre "foto"
-    fotosCapturadas.value.forEach((foto, index) => {
-      formData.append('foto', foto.blob, `foto${index + 1}.jpg`);
-    });
-    
-    // ✅ Agregar metadata como campos separados
-    fotosCapturadas.value.forEach((foto, index) => {
-      formData.append(`instruccion${index + 1}`, foto.instruccion);
-    });
-
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/facial-recognition/register-multiple/${funcionarioSeleccionado.value.id}`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formData
-      }
+    const response = await api.post(
+      `/facial-recognition/registrar-descriptores/${funcionarioSeleccionado.value.id}`,
+      { descriptores: descriptoresProcesados.value }
     );
-
-    if (!response.ok) {
-      throw new Error('Error al registrar datos faciales');
-    }
-
-    const result = await response.json();
     
-    alert(`✅ Registro facial completado exitosamente!\n\nSe guardaron ${result.registrosCreados || 5} fotos para mejor reconocimiento.`);
+    console.log('✅ Respuesta del servidor:', response);
+    
+    alert(`✅ Registro facial completado!\n\nSe guardaron 5 descriptores faciales.`);
     
     fotosCapturadas.value = [];
+    descriptoresProcesados.value = [];
     funcionarioSeleccionado.value = null;
     detenerCamara();
     await cargarFuncionarios();
     
   } catch (error: any) {
-    console.error('Error al guardar registro:', error);
-    alert('❌ Error al guardar el registro facial: ' + error.message);
+    console.error('❌ Error:', error);
+    alert('❌ Error al guardar: ' + (error.response?.data?.message || error.message));
   } finally {
     cargando.value = false;
   }
 }
+
+function reiniciarCaptura() {
+  fotosCapturadas.value = [];
+  descriptoresProcesados.value = [];
+  capturando.value = false;
+  procesandoFotos.value = false;
+  countdown.value = 3;
+  if (countdownInterval) clearInterval(countdownInterval);
+}
+
+onMounted(async () => {
+  await cargarModelos();
+  await cargarFuncionarios();
+});
+
 onUnmounted(() => {
   detenerCamara();
 });
-
-// Cargar funcionarios al montar
-cargarFuncionarios();
 </script>
 
 <style scoped>

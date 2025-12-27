@@ -1,27 +1,23 @@
 import { PrismaService } from '../prisma/prisma.service';
-import '@tensorflow/tfjs-backend-cpu';
+import { TelegramService } from '../notifications/telegram.service';
 export declare class FacialRecognitionService {
     private prisma;
-    private modelsLoaded;
-    constructor(prisma: PrismaService);
-    private inicializar;
-    private cargarModelos;
-    private detectarRostro;
-    registrarDatosFaciales(funcionarioId: number, foto: Express.Multer.File): Promise<{
-        message: string;
-        funcionarioId: number;
-        registros: number;
-    }>;
-    registrarMultiple(funcionarioId: number, fotos: Express.Multer.File[], metadata: Record<string, any>): Promise<{
+    private telegramService;
+    constructor(prisma: PrismaService, telegramService: TelegramService);
+    registrarDescriptores(funcionarioId: number, descriptores: {
+        descriptor: number[];
+        instruccion: string;
+    }[]): Promise<{
+        success: boolean;
         message: string;
         funcionarioId: number;
         registrosCreados: number;
         detalles: {
             id: any;
-            instruccion: any;
+            instruccion: string;
         }[];
     }>;
-    verificarYMarcar(foto: Express.Multer.File): Promise<{
+    verificarDescriptor(descriptor: number[]): Promise<{
         success: boolean;
         message: string;
         distancia?: undefined;
@@ -42,8 +38,9 @@ export declare class FacialRecognitionService {
         message: string;
         asistencia: {
             id: number;
-            tipo: string;
-            hora: Date;
+            fecha: Date;
+            tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+            minutosTardanza: number;
         };
         funcionario: {
             id: any;
@@ -55,6 +52,7 @@ export declare class FacialRecognitionService {
         distancia: number;
         umbral: number;
     }>;
+    private calcularDistanciaEuclidiana;
     private determinarTipoMarcaje;
     private calcularAtraso;
     obtenerEstado(funcionarioId: number): Promise<{

@@ -2,21 +2,17 @@ import { FacialRecognitionService } from './facial-recognition.service';
 export declare class FacialRecognitionController {
     private readonly facialRecognitionService;
     constructor(facialRecognitionService: FacialRecognitionService);
-    registrar(funcionarioId: number, foto: Express.Multer.File): Promise<{
-        message: string;
-        funcionarioId: number;
-        registros: number;
-    }>;
-    registrarMultiple(funcionarioId: number, fotos: Express.Multer.File[], body: any): Promise<{
+    registrarDescriptores(funcionarioId: number, body: any): Promise<{
+        success: boolean;
         message: string;
         funcionarioId: number;
         registrosCreados: number;
         detalles: {
             id: any;
-            instruccion: any;
+            instruccion: string;
         }[];
     }>;
-    marcar(foto: Express.Multer.File): Promise<{
+    verificarDescriptor(body: any): Promise<{
         success: boolean;
         message: string;
         distancia?: undefined;
@@ -37,8 +33,9 @@ export declare class FacialRecognitionController {
         message: string;
         asistencia: {
             id: number;
-            tipo: string;
-            hora: Date;
+            fecha: Date;
+            tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+            minutosTardanza: number;
         };
         funcionario: {
             id: any;

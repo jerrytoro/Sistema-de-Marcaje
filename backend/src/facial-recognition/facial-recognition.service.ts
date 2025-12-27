@@ -1,444 +1,311 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-
-// ✅ Configurar TensorFlow ANTES de face-api
-import '@tensorflow/tfjs-backend-cpu';
-import * as tf from '@tensorflow/tfjs';
-tf.setBackend('cpu');
-
-// ✅ Importar face-api desde archivo ESM
-import * as faceapi from 'face-api.js';
-import * as canvas from 'canvas';
-import * as path from 'path';
-// Configurar canvas para face-api
-const { Canvas, Image, ImageData } = canvas;
-// @ts-ignore
-faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
+import { TelegramService } from '../notifications/telegram.service';
 
 @Injectable()
 export class FacialRecognitionService {
-  private modelsLoaded = false;
-
-  constructor(private prisma: PrismaService) {
-    this.inicializar();
-  }
-
-  private async inicializar() {
-    try {
-      await tf.ready();
-      console.log('✅ TensorFlow backend:', tf.getBackend());
-      await this.cargarModelos();
-    } catch (error) {
-      console.error('❌ Error en inicialización:', error);
-    }
-  }
-
-  private async cargarModelos() {
-    if (this.modelsLoaded) return;
-
-    try {
-    const MODEL_URL = path.join(process.cwd(), 'models');
-    
-    console.log('📂 Intentando cargar modelos desde:', MODEL_URL);
-
-    // ✅ Cargar con loadFromDisk
-    await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_URL);
-    console.log('✅ ssdMobilenetv1 cargado');
-    
-    await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_URL);
-    console.log('✅ faceLandmark68Net cargado');
-    
-    await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_URL);
-    console.log('✅ faceRecognitionNet cargado');
-
-    this.modelsLoaded = true;
-    console.log('✅ Todos los modelos cargados correctamente');
-  } catch (error) {
-    console.error('❌ Error detallado al cargar modelos:', error);
-    throw new Error('No se pudieron cargar los modelos de reconocimiento facial');
-  }
-  }
-
-  private async detectarRostro(buffer: Buffer): Promise<Float32Array | null> {
-    try {
-      const img = await canvas.loadImage(buffer);
-      const detecciones = await faceapi
-        .detectSingleFace(img as any)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!detecciones) {
-        return null;
-      }
-
-      return detecciones.descriptor;
-    } catch (error) {
-      console.error('Error al detectar rostro:', error);
-      return null;
-    }
-  }
-
-  async registrarDatosFaciales(
-    funcionarioId: number,
-    foto: Express.Multer.File,
+  constructor(
+    private prisma: PrismaService,
+    private telegramService: TelegramService,
   ) {
-    if (!foto) {
-      throw new BadRequestException('No se proporcionó ninguna foto');
-    }
-
-    const funcionario = await this.prisma.funcionario.findUnique({
-      where: { id: funcionarioId },
-    });
-
-    if (!funcionario) {
-      throw new BadRequestException('Funcionario no encontrado');
-    }
-
-    const descriptor = await this.detectarRostro(foto.buffer);
-
-    if (!descriptor) {
-      throw new BadRequestException(
-        'No se detectó ningún rostro en la imagen',
-      );
-    }
-
-    await this.prisma.registroFacial.create({
-      data: {
-        funcionarioId,
-        facialData: JSON.stringify(Array.from(descriptor)),
-        metadata: {
-          capturaNumero: 1,
-          fechaCaptura: new Date().toISOString(),
-          metodo: 'registro-simple',
-        },
-      } as any,
-    });
-
-    await this.prisma.funcionario.update({
-      where: { id: funcionarioId },
-      data: { facialDataRegistered: true },
-    });
-
-    return {
-      message: 'Registro facial completado exitosamente',
-      funcionarioId,
-      registros: 1,
-    };
+    console.log('🔧 FacialRecognitionService inicializado (modo descriptores)');
   }
 
-  // async registrarMultiple(
-  //   funcionarioId: number,
-  //   fotos: Express.Multer.File[],
-  //   metadata: Record<string, any>,
-  // ) {
-  //   if (!fotos || fotos.length !== 5) {
-  //     throw new BadRequestException(
-  //       `Se requieren exactamente 5 fotos, se recibieron ${fotos?.length || 0}`,
-  //     );
-  //   }
+  /**
+   * Registrar descriptores faciales enviados desde el frontend
+   */
+  async registrarDescriptores(
+    funcionarioId: number,
+    descriptores: { descriptor: number[]; instruccion: string }[],
+  ) {
+    console.log('\n🔍 ========== INICIO REGISTRO DE DESCRIPTORES ==========');
+    console.log('📝 Funcionario ID:', funcionarioId);
+    console.log('📝 Cantidad de descriptores recibidos:', descriptores.length);
 
-  //   const funcionario = await this.prisma.funcionario.findUnique({
-  //     where: { id: funcionarioId },
-  //   });
-
-  //   if (!funcionario) {
-  //     throw new BadRequestException('Funcionario no encontrado');
-  //   }
-
-  //   await this.prisma.registroFacial.deleteMany({
-  //     where: { funcionarioId },
-  //   });
-
-  //   const registrosCreados: any[] = [];
-
-  //   for (let i = 0; i < fotos.length; i++) {
-  //     const foto = fotos[i];
-  //     const instruccion = metadata[`instruccion${i + 1}`] || `Foto ${i + 1}`;
-
-  //     const descriptor = await this.detectarRostro(foto.buffer);
-
-  //     if (!descriptor) {
-  //       throw new BadRequestException(
-  //         `No se detectó rostro en la foto ${i + 1} (${instruccion})`,
-  //       );
-  //     }
-
-  //     const registro = await this.prisma.registroFacial.create({
-  //       data: {
-  //         funcionarioId,
-  //         facialData: JSON.stringify(Array.from(descriptor)),
-  //         metadata: {
-  //           instruccion,
-  //           capturaNumero: i + 1,
-  //           fechaCaptura: new Date().toISOString(),
-  //           metodo: 'registro-multiple',
-  //         },
-  //       } as any,
-  //     });
-
-  //     registrosCreados.push(registro);
-  //   }
-
-  //   await this.prisma.funcionario.update({
-  //     where: { id: funcionarioId },
-  //     data: { facialDataRegistered: true },
-  //   });
-
-  //   return {
-  //     message: 'Registro facial múltiple completado exitosamente',
-  //     funcionarioId,
-  //     registrosCreados: registrosCreados.length,
-  //     detalles: registrosCreados.map((r: any, i: number) => ({
-  //       id: r.id,
-  //       instruccion: metadata[`instruccion${i + 1}`],
-  //     })),
-  //   };
-  // }
-  // En facial-recognition.service.ts
-// Busca el método registrarMultiple y reemplázalo con este:
-
-async registrarMultiple(
-  funcionarioId: number,
-  fotos: Express.Multer.File[],
-  metadata: Record<string, any>,
-) {
-  console.log('🔍 ========== INICIO REGISTRO MÚLTIPLE ==========');
-  console.log('📝 Funcionario ID:', funcionarioId);
-  console.log('📝 Cantidad de fotos recibidas:', fotos?.length);
-  console.log('📝 Metadata recibida:', metadata);
-
-  try {
-    if (!fotos || fotos.length !== 5) {
-      const error = `Se requieren exactamente 5 fotos, se recibieron ${fotos?.length || 0}`;
-      console.error('❌ ERROR DE VALIDACIÓN:', error);
-      throw new BadRequestException(error);
-    }
-
-    console.log('✅ Validación de cantidad de fotos: OK');
-
-    const funcionario = await this.prisma.funcionario.findUnique({
-      where: { id: funcionarioId },
-    });
-
-    console.log('📝 Funcionario encontrado:', funcionario ? 'SI' : 'NO');
-
-    if (!funcionario) {
-      console.error('❌ ERROR: Funcionario no encontrado con ID:', funcionarioId);
-      throw new BadRequestException('Funcionario no encontrado');
-    }
-
-    console.log('✅ Funcionario encontrado:', funcionario.nombre, funcionario.apellido);
-
-    console.log('🗑️ Eliminando registros anteriores...');
-    await this.prisma.registroFacial.deleteMany({
-      where: { funcionarioId },
-    });
-    console.log('✅ Registros anteriores eliminados');
-
-    const registrosCreados: any[] = [];
-
-    for (let i = 0; i < fotos.length; i++) {
-      const foto = fotos[i];
-      const instruccion = metadata[`instruccion${i + 1}`] || `Foto ${i + 1}`;
-
-      console.log(`\n📸 Procesando foto ${i + 1}/5`);
-      console.log('  - Instrucción:', instruccion);
-      console.log('  - Tamaño:', foto.size, 'bytes');
-      console.log('  - Tipo:', foto.mimetype);
-
-      console.log('  - Detectando rostro...');
-      const descriptor = await this.detectarRostro(foto.buffer);
-
-      if (!descriptor) {
-        const errorMsg = `No se detectó rostro en la foto ${i + 1} (${instruccion})`;
-        console.error(`  ❌ ${errorMsg}`);
-        throw new BadRequestException(errorMsg);
+    try {
+      // Validar cantidad
+      if (!descriptores || descriptores.length !== 5) {
+        throw new BadRequestException(
+          `Se requieren exactamente 5 descriptores, se recibieron ${descriptores?.length || 0}`,
+        );
       }
 
-      console.log('  ✅ Rostro detectado, descriptor generado');
-      console.log('  - Longitud del descriptor:', descriptor.length);
-
-      console.log('  - Guardando en BD...');
-      const registro = await this.prisma.registroFacial.create({
-        data: {
-          funcionarioId,
-          facialData: JSON.stringify(Array.from(descriptor)),
-          metadata: {
-            instruccion,
-            capturaNumero: i + 1,
-            fechaCaptura: new Date().toISOString(),
-            metodo: 'registro-multiple',
-          },
-        } as any,
+      // Buscar funcionario
+      const funcionario = await this.prisma.funcionario.findUnique({
+        where: { id: funcionarioId },
       });
 
-      console.log('  ✅ Registro guardado en BD con ID:', registro.id);
-      registrosCreados.push(registro);
+      if (!funcionario) {
+        throw new BadRequestException('Funcionario no encontrado');
+      }
+
+      console.log('✅ Funcionario encontrado:', funcionario.nombre, funcionario.apellido);
+
+      // Eliminar registros anteriores
+      console.log('🗑️ Eliminando registros anteriores...');
+      await this.prisma.registroFacial.deleteMany({
+        where: { funcionarioId },
+      });
+      console.log('✅ Registros anteriores eliminados');
+
+      // Guardar cada descriptor
+      const registrosCreados: any[] = [];
+
+      for (let i = 0; i < descriptores.length; i++) {
+        const { descriptor, instruccion } = descriptores[i];
+
+        console.log(`\n📸 Guardando descriptor ${i + 1}/5`);
+        console.log('  📝 Instrucción:', instruccion);
+        console.log('  📊 Longitud del descriptor:', descriptor.length);
+
+        // Validar que el descriptor tenga 128 valores (estándar de face-api.js)
+        if (descriptor.length !== 128) {
+          throw new BadRequestException(
+            `Descriptor ${i + 1} inválido. Se esperaban 128 valores, se recibieron ${descriptor.length}`,
+          );
+        }
+
+        const registro = await this.prisma.registroFacial.create({
+          data: {
+            funcionarioId,
+            facialData: JSON.stringify(descriptor),
+            metadata: {
+              instruccion,
+              capturaNumero: i + 1,
+              fechaCaptura: new Date().toISOString(),
+              metodo: 'registro-frontend',
+            },
+          } as any,
+        });
+
+        console.log('  ✅ Descriptor guardado con ID:', registro.id);
+        registrosCreados.push(registro);
+      }
+
+      // Marcar como registrado
+      await this.prisma.funcionario.update({
+        where: { id: funcionarioId },
+        data: { facialDataRegistered: true },
+      });
+
+      console.log('✅ ========== REGISTRO DE DESCRIPTORES COMPLETADO ==========\n');
+
+      return {
+        success: true,
+        message: 'Registro facial completado exitosamente',
+        funcionarioId,
+        registrosCreados: registrosCreados.length,
+        detalles: registrosCreados.map((r: any, i: number) => ({
+          id: r.id,
+          instruccion: descriptores[i].instruccion,
+        })),
+      };
+    } catch (error) {
+      console.error('\n❌ ERROR EN REGISTRO DE DESCRIPTORES');
+      console.error('❌ Mensaje:', error.message);
+      throw error;
     }
-
-    console.log('\n📝 Actualizando flag facialDataRegistered...');
-    await this.prisma.funcionario.update({
-      where: { id: funcionarioId },
-      data: { facialDataRegistered: true },
-    });
-
-    console.log('✅ ========== REGISTRO MÚLTIPLE COMPLETADO ==========\n');
-
-    return {
-      message: 'Registro facial múltiple completado exitosamente',
-      funcionarioId,
-      registrosCreados: registrosCreados.length,
-      detalles: registrosCreados.map((r: any, i: number) => ({
-        id: r.id,
-        instruccion: metadata[`instruccion${i + 1}`],
-      })),
-    };
-  } catch (error) {
-    console.error('\n❌ ========== ERROR EN REGISTRO MÚLTIPLE ==========');
-    console.error('❌ Tipo de error:', error.constructor.name);
-    console.error('❌ Mensaje:', error.message);
-    console.error('❌ Stack:', error.stack);
-    console.error('❌ ================================================\n');
-    throw error;
   }
-}
-  async verificarYMarcar(foto: Express.Multer.File) {
-    if (!foto) {
-      return {
-        success: false,
-        message: 'No se proporcionó ninguna foto',
-      };
-    }
 
-    const descriptorEntrada = await this.detectarRostro(foto.buffer);
+  /**
+   * Verificar descriptor facial y marcar asistencia
+   */
+  async verificarDescriptor(descriptor: number[]) {
+    console.log('\n🔍 ========== VERIFICACIÓN DE DESCRIPTOR ==========');
 
-    if (!descriptorEntrada) {
-      return {
-        success: false,
-        message: 'No se detectó ningún rostro en la imagen',
-      };
-    }
+    try {
+      // Validar descriptor
+      console.log('📝 Paso 1: Validando descriptor...');
+      if (!descriptor || descriptor.length !== 128) {
+        throw new BadRequestException(
+          `Descriptor inválido. Se esperaban 128 valores, se recibieron ${descriptor?.length || 0}`,
+        );
+      }
+      console.log('✅ Descriptor válido: 128 valores');
 
-    const todosLosRegistros = await this.prisma.registroFacial.findMany({
-      include: {
-        funcionario: {
-          include: {
-            usuario: true,
+      // Obtener todos los registros faciales
+      console.log('📝 Paso 2: Consultando registros faciales...');
+      const todosLosRegistros = await this.prisma.registroFacial.findMany({
+        include: {
+          funcionario: {
+            include: {
+              usuario: true,
+            },
           },
         },
-      },
-    });
+      });
+      console.log(`✅ Registros encontrados: ${todosLosRegistros.length}`);
 
-    if (todosLosRegistros.length === 0) {
-      return {
-        success: false,
-        message: 'No hay funcionarios registrados con datos faciales',
-      };
-    }
-
-    let mejorCoincidencia: any = null;
-    let mejorDistancia = Infinity;
-    const UMBRAL = 0.6;
-
-    for (const registro of todosLosRegistros) {
-      try {
-        const descriptorGuardado = new Float32Array(
-          JSON.parse(registro.facialData),
-        );
-
-        const distancia = faceapi.euclideanDistance(
-          descriptorEntrada,
-          descriptorGuardado,
-        );
-
-        if (distancia < mejorDistancia) {
-          mejorDistancia = distancia;
-          mejorCoincidencia = registro;
-        }
-      } catch (error) {
-        console.error(`Error al comparar con registro ${registro.id}:`, error);
+      if (todosLosRegistros.length === 0) {
+        console.log('❌ No hay registros faciales en la base de datos');
+        return {
+          success: false,
+          message: 'No hay funcionarios registrados con datos faciales',
+        };
       }
-    }
 
-    if (!mejorCoincidencia || mejorDistancia > UMBRAL) {
+      // Buscar la mejor coincidencia
+      console.log('📝 Paso 3: Comparando descriptores...');
+      let mejorCoincidencia: any = null;
+      let mejorDistancia = Infinity;
+      const UMBRAL = 0.6;
+
+      for (const registro of todosLosRegistros) {
+        try {
+          const descriptorGuardado = JSON.parse(registro.facialData);
+          const distancia = this.calcularDistanciaEuclidiana(descriptor, descriptorGuardado);
+
+          if (distancia < mejorDistancia) {
+            mejorDistancia = distancia;
+            mejorCoincidencia = registro;
+          }
+        } catch (error) {
+          console.error(`❌ Error al comparar con registro ${registro.id}:`, error.message);
+        }
+      }
+
+      console.log(`📊 Mejor distancia: ${mejorDistancia.toFixed(4)}, Umbral: ${UMBRAL}`);
+
+      if (!mejorCoincidencia || mejorDistancia > UMBRAL) {
+        console.log('❌ Rostro no reconocido. Distancia:', mejorDistancia);
+        return {
+          success: false,
+          message: 'Rostro no reconocido',
+          distancia: mejorDistancia,
+          umbral: UMBRAL,
+        };
+      }
+
+      const confianza = Math.round((1 - mejorDistancia) * 100);
+      const funcionario = mejorCoincidencia.funcionario;
+
+      console.log('✅ Rostro reconocido:', funcionario.nombre, funcionario.apellido);
+      console.log('📊 Confianza:', confianza + '%');
+
+      // Determinar tipo de marcaje
+      console.log('📝 Paso 4: Determinando tipo de marcaje...');
+      const tipoMarcaje = await this.determinarTipoMarcaje(funcionario.id);
+      console.log('✅ Tipo de marcaje:', tipoMarcaje);
+
+      // Registrar asistencia
+      console.log('📝 Paso 5: Registrando asistencia...');
+      const fechaMarcaje = new Date();
+      const asistencia = await this.prisma.asistencia.create({
+        data: {
+          funcionarioId: funcionario.id,
+          fecha: fechaMarcaje,
+          horaMarcaje: fechaMarcaje,
+          tipoMarcaje: tipoMarcaje,
+          metodoMarcaje: 'FACIAL',
+        } as any,
+      });
+      console.log('✅ Asistencia creada con ID:', asistencia.id);
+
+      // Calcular atraso
+      console.log('📝 Paso 6: Calculando atraso...');
+      await this.calcularAtraso(asistencia.id);
+      console.log('✅ Atraso calculado');
+
+      // Obtener asistencia actualizada
+      const asistenciaFinal = await this.prisma.asistencia.findUnique({
+        where: { id: asistencia.id },
+      });
+
+      if (!asistenciaFinal) {
+        throw new Error('No se pudo recuperar la asistencia');
+      }
+
+      // Enviar notificación a Telegram (si está vinculado)
+      if (funcionario.telegramChatId) {
+        console.log('📱 Enviando notificación a Telegram...');
+        try {
+          await this.telegramService.notificarMarcajeExitoso({
+            chatId: funcionario.telegramChatId,
+            funcionario: `${funcionario.nombre} ${funcionario.apellido}`,
+            tipoMarcaje: asistenciaFinal.tipoMarcaje,
+            hora: asistenciaFinal.horaMarcaje.toLocaleTimeString('es-ES', {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+            minutosTardanza: asistenciaFinal.minutosTardanza || 0,
+          });
+          console.log('✅ Notificación enviada a Telegram');
+        } catch (error) {
+          console.error('❌ Error al enviar notificación a Telegram:', error.message);
+          // No lanzamos el error para que el marcaje siga funcionando aunque falle Telegram
+        }
+      } else {
+        console.log('ℹ️  Funcionario no tiene Telegram vinculado, notificación omitida');
+      }
+
+      console.log('✅ ========== VERIFICACIÓN COMPLETADA ==========\n');
+
       return {
-        success: false,
-        message: 'Rostro no reconocido',
+        success: true,
+        message: `Bienvenido ${funcionario.nombre} ${funcionario.apellido}`,
+        asistencia: {
+          id: asistenciaFinal.id,
+          fecha: asistenciaFinal.fecha,
+          tipoMarcaje: asistenciaFinal.tipoMarcaje,
+          minutosTardanza: asistenciaFinal.minutosTardanza || 0,
+        },
+        funcionario: {
+          id: funcionario.id,
+          nombre: funcionario.nombre,
+          apellido: funcionario.apellido,
+          cargo: funcionario.cargo,
+        },
+        confianza,
         distancia: mejorDistancia,
         umbral: UMBRAL,
       };
+    } catch (error) {
+      console.error('\n❌ ========== ERROR EN VERIFICACIÓN ==========');
+      console.error('❌ Tipo de error:', error.constructor.name);
+      console.error('❌ Mensaje:', error.message);
+      console.error('❌ Stack:', error.stack);
+      console.error('❌ ==========================================\n');
+      throw error;
     }
-
-    const confianza = Math.round((1 - mejorDistancia) * 100);
-    const funcionario = mejorCoincidencia.funcionario;
-
-    const tipoMarcaje = await this.determinarTipoMarcaje(funcionario.id);
-
-    const asistencia = await this.prisma.asistencia.create({
-      data: {
-        funcionarioId: funcionario.id,
-        fecha: new Date(),
-        tipoMarcaje: tipoMarcaje,
-        metodoMarcaje: 'FACIAL',
-      } as any,
-    });
-
-    await this.calcularAtraso(asistencia.id);
-
-    return {
-      success: true,
-      message: `Bienvenido ${funcionario.nombre} ${funcionario.apellido}`,
-      asistencia: {
-        id: asistencia.id,
-        tipo: tipoMarcaje,
-        hora: asistencia.fecha,
-      },
-      funcionario: {
-        id: funcionario.id,
-        nombre: funcionario.nombre,
-        apellido: funcionario.apellido,
-        cargo: funcionario.cargo,
-      },
-      confianza,
-      distancia: mejorDistancia,
-      umbral: UMBRAL,
-    };
   }
 
+  /**
+   * Calcular distancia euclidiana entre dos descriptores
+   */
+  private calcularDistanciaEuclidiana(desc1: number[], desc2: number[]): number {
+    let suma = 0;
+    for (let i = 0; i < desc1.length; i++) {
+      const diferencia = desc1[i] - desc2[i];
+      suma += diferencia * diferencia;
+    }
+    return Math.sqrt(suma);
+  }
+
+  /**
+   * Determinar tipo de marcaje según marcajes del día
+   */
   private async determinarTipoMarcaje(funcionarioId: number): Promise<string> {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
     const marcajesHoy = await this.prisma.asistencia.findMany({
-      where: {
-        funcionarioId,
-        fecha: {
-          gte: hoy,
-        },
-      },
-      orderBy: {
-        fecha: 'asc',
-      },
+      where: { funcionarioId, fecha: { gte: hoy } },
+      orderBy: { fecha: 'asc' },
     });
 
     const tiposMarcados = marcajesHoy.map((m) => m.tipoMarcaje);
 
-    if (!tiposMarcados.includes('INGRESO_MANANA')) {
-      return 'INGRESO_MANANA';
-    }
-    if (!tiposMarcados.includes('SALIDA_DESCANSO')) {
-      return 'SALIDA_DESCANSO';
-    }
-    if (!tiposMarcados.includes('INGRESO_TARDE')) {
-      return 'INGRESO_TARDE';
-    }
-    if (!tiposMarcados.includes('SALIDA_FINAL')) {
-      return 'SALIDA_FINAL';
-    }
+    if (!tiposMarcados.includes('INGRESO_MANANA')) return 'INGRESO_MANANA';
+    if (!tiposMarcados.includes('SALIDA_DESCANSO')) return 'SALIDA_DESCANSO';
+    if (!tiposMarcados.includes('INGRESO_TARDE')) return 'INGRESO_TARDE';
+    if (!tiposMarcados.includes('SALIDA_FINAL')) return 'SALIDA_FINAL';
 
     return 'INGRESO_MANANA';
   }
 
+  /**
+   * Calcular atraso
+   */
   private async calcularAtraso(asistenciaId: number) {
     const asistencia = await this.prisma.asistencia.findUnique({
       where: { id: asistenciaId },
@@ -473,6 +340,9 @@ async registrarMultiple(
     }
   }
 
+  /**
+   * Obtener estado del registro facial
+   */
   async obtenerEstado(funcionarioId: number) {
     const registros = await this.prisma.registroFacial.findMany({
       where: { funcionarioId },
@@ -492,6 +362,9 @@ async registrarMultiple(
     };
   }
 
+  /**
+   * Eliminar registros faciales
+   */
   async eliminarRegistros(funcionarioId: number) {
     const resultado = await this.prisma.registroFacial.deleteMany({
       where: { funcionarioId },

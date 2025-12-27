@@ -1,74 +1,42 @@
 import api from './api';
 
 /**
- * Servicio de Reconocimiento Facial (Frontend)
+ * Servicio de Reconocimiento Facial (Frontend - Solo Descriptores)
  */
 class FacialRecognitionService {
   /**
-   * Registrar datos faciales de un funcionario
+   * Registrar descriptores faciales (ya procesados en frontend)
    */
-  async registrarDatosFaciales(funcionarioId: number, fotoBlob: Blob): Promise<any> {
-    const formData = new FormData();
-    formData.append('foto', fotoBlob, 'rostro.jpg');
-
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/facial-recognition/register/${funcionarioId}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: formData,
+  async registrarDescriptores(
+    funcionarioId: number,
+    descriptores: { descriptor: number[]; instruccion: string }[]
+  ): Promise<any> {
+    return await api.post(`/facial-recognition/registrar-descriptores/${funcionarioId}`, {
+      descriptores
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Error al registrar datos faciales');
-    }
-
-    return await response.json();
   }
 
   /**
-   * Verificar rostro (sin registrar)
+   * Verificar descriptor facial y marcar asistencia
    */
-  async verificarRostro(fotoBlob: Blob): Promise<any> {
-    const formData = new FormData();
-    formData.append('foto', fotoBlob, 'rostro.jpg');
-
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/facial-recognition/verify`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: formData,
+  async verificarDescriptor(descriptor: number[]): Promise<any> {
+    return await api.post('/facial-recognition/verificar-descriptor', {
+      descriptor
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Error al verificar rostro');
-    }
-
-    return await response.json();
   }
 
   /**
-   * Obtener datos faciales de un funcionario
+   * Obtener estado del registro facial
    */
-  async obtenerDatosFaciales(funcionarioId: number): Promise<any> {
-    return await api.get(`/facial-recognition/${funcionarioId}`);
+  async obtenerEstado(funcionarioId: number): Promise<any> {
+    return await api.get(`/facial-recognition/status/${funcionarioId}`);
   }
 
   /**
-   * Listar todos los funcionarios con datos faciales
+   * Eliminar registros faciales
    */
-  async listarFuncionariosConDatosFaciales(): Promise<any[]> {
-    return await api.get('/facial-recognition');
-  }
-
-  /**
-   * Eliminar datos faciales
-   */
-  async eliminarDatosFaciales(funcionarioId: number): Promise<void> {
-    await api.delete(`/facial-recognition/${funcionarioId}`);
+  async eliminarRegistros(funcionarioId: number): Promise<void> {
+    await api.delete(`/facial-recognition/delete/${funcionarioId}`);
   }
 }
 

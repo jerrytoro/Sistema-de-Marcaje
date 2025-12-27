@@ -14,27 +14,25 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FacialRecognitionController = void 0;
 const common_1 = require("@nestjs/common");
-const platform_express_1 = require("@nestjs/platform-express");
 const facial_recognition_service_1 = require("./facial-recognition.service");
 let FacialRecognitionController = class FacialRecognitionController {
     facialRecognitionService;
     constructor(facialRecognitionService) {
         this.facialRecognitionService = facialRecognitionService;
     }
-    async registrar(funcionarioId, foto) {
-        return this.facialRecognitionService.registrarDatosFaciales(funcionarioId, foto);
-    }
-    async registrarMultiple(funcionarioId, fotos, body) {
-        console.log('🎯 ===== CONTROLLER: register-multiple =====');
+    async registrarDescriptores(funcionarioId, body) {
+        console.log('🎯 ===== CONTROLLER: registrar-descriptores =====');
         console.log('📝 Funcionario ID:', funcionarioId);
-        console.log('📝 Fotos recibidas:', fotos?.length);
-        console.log('📝 Body recibido:', body);
-        console.log('📝 Nombres de archivos:', fotos?.map(f => f.originalname));
+        console.log('📝 Body recibido:', JSON.stringify(body).substring(0, 200));
+        console.log('📝 Descriptores:', body.descriptores?.length);
         console.log('========================================');
-        return this.facialRecognitionService.registrarMultiple(funcionarioId, fotos, body);
+        return this.facialRecognitionService.registrarDescriptores(funcionarioId, body.descriptores);
     }
-    async marcar(foto) {
-        return this.facialRecognitionService.verificarYMarcar(foto);
+    async verificarDescriptor(body) {
+        console.log('🎯 ===== CONTROLLER: verificar-descriptor =====');
+        console.log('📝 Descriptor recibido:', body.descriptor?.length, 'valores');
+        console.log('========================================');
+        return this.facialRecognitionService.verificarDescriptor(body.descriptor);
     }
     async obtenerEstado(funcionarioId) {
         return this.facialRecognitionService.obtenerEstado(funcionarioId);
@@ -45,33 +43,22 @@ let FacialRecognitionController = class FacialRecognitionController {
 };
 exports.FacialRecognitionController = FacialRecognitionController;
 __decorate([
-    (0, common_1.Post)('register/:id'),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('foto')),
+    (0, common_1.Post)('registrar-descriptores/:id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.UploadedFile)()),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
-], FacialRecognitionController.prototype, "registrar", null);
+], FacialRecognitionController.prototype, "registrarDescriptores", null);
 __decorate([
-    (0, common_1.Post)('register-multiple/:id'),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('foto', 5)),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.UploadedFiles)()),
-    __param(2, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Array, Object]),
-    __metadata("design:returntype", Promise)
-], FacialRecognitionController.prototype, "registrarMultiple", null);
-__decorate([
-    (0, common_1.Post)('marcar'),
+    (0, common_1.Post)('verificar-descriptor'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('foto')),
-    __param(0, (0, common_1.UploadedFile)()),
+    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], FacialRecognitionController.prototype, "marcar", null);
+], FacialRecognitionController.prototype, "verificarDescriptor", null);
 __decorate([
     (0, common_1.Get)('status/:id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),

@@ -77,6 +77,8 @@ model ConfiguracionHorario {
   tipoMarcaje        TipoMarcaje  @unique @map("tipo_marcaje")
   horaProgramada     String       @db.VarChar(5) @map("hora_programada")
   toleranciaMinutos  Int          @default(0) @map("tolerancia_minutos")
+  horaInicioVentana  String?      @db.VarChar(5) @map("hora_inicio_ventana")
+  horaFinVentana     String?      @db.VarChar(5) @map("hora_fin_ventana")
   createdAt          DateTime     @default(now()) @map("created_at")
   updatedAt          DateTime     @updatedAt @map("updated_at")
 
@@ -107,6 +109,7 @@ model Asistencia {
   tipoMarcaje      TipoMarcaje   @map("tipo_marcaje")
   metodoMarcaje    String?       @map("metodo_marcaje")
   minutosTardanza  Int           @default(0) @map("minutos_tardanza")
+  minutosSalidaAnticipada   Int           @default(0) @map("minutos_salida_anticipada")
   verificado       Boolean       @default(true)
   observacion      String?       @db.VarChar(255)
   createdAt        DateTime      @default(now()) @map("created_at")

@@ -18,7 +18,7 @@ export class ScheduledTasksService {
    * CRON JOB 1: Verificar salidas no registradas
    * Se ejecuta todos los días a las 19:00
    */
-  @Cron('0 19 * * *', {
+  @Cron('30 18 * * *', {
     name: 'verificar-salidas-no-registradas',
     timeZone: 'America/La_Paz',
   })

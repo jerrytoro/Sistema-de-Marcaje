@@ -93,7 +93,7 @@ class PDFGenerator {
                 .fontSize(8)
                 .font('Helvetica')
                 .text(`Página ${i + 1} de ${pageCount}`, 50, doc.page.height - 50, { align: 'center' });
-            doc.text(`Generado: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES')}`, 50, doc.page.height - 35, { align: 'center' });
+            doc.text(`Generado: ${new Date().toLocaleDateString('es-BO')} ${new Date().toLocaleTimeString('es-BO')}`, 50, doc.page.height - 35, { align: 'center' });
         }
         doc.end();
     }

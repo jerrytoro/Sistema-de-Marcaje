@@ -20,7 +20,7 @@ export const useConfiguracionHorariosStore = defineStore('configuracionHorarios'
       
       // ✅ Forzar limpieza y nueva asignación
       configuraciones.value = [];
-      
+      configuracionActual.value = null;
       const newConfigs = Array.isArray(result) ? result : [result];
       
       // ✅ Asignar en el siguiente tick para asegurar reactividad

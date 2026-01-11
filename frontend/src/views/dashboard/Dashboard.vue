@@ -256,7 +256,7 @@ const dashboardStore = useDashboardStore();
 const sidebarOpen = ref(false);
 
 const currentDate = computed(() => {
-  return new Date().toLocaleDateString('es-ES', {
+  return new Date().toLocaleDateString('es-BO', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -267,7 +267,7 @@ const currentDate = computed(() => {
 const currentTime = ref('');
 
 const updateTime = () => {
-  currentTime.value = new Date().toLocaleTimeString('es-ES');
+  currentTime.value = new Date().toLocaleTimeString('es-BO');
 };
 
 const formatTipoMarcaje = (tipo: string) => {
@@ -281,7 +281,7 @@ const formatTipoMarcaje = (tipo: string) => {
 };
 
 const formatHora = (hora: string) => {
-  return new Date(hora).toLocaleTimeString('es-ES', {
+  return new Date(hora).toLocaleTimeString('es-BO', {
     hour: '2-digit',
     minute: '2-digit',
   });

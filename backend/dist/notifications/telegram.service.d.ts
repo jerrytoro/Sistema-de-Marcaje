@@ -18,6 +18,7 @@ export declare class TelegramService implements OnModuleInit {
         tipoMarcaje: string;
         hora: string;
         minutosTardanza: number;
+        minutosSalidaAnticipada?: number;
     }): Promise<void>;
     notificarSalidaNoRegistrada(data: {
         chatId: string;

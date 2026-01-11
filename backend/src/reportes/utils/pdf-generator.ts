@@ -168,7 +168,7 @@ export class PDFGenerator {
         );
 
       doc.text(
-        `Generado: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES')}`,
+        `Generado: ${new Date().toLocaleDateString('es-BO')} ${new Date().toLocaleTimeString('es-BO')}`,
         50,
         doc.page.height - 35,
         { align: 'center' },

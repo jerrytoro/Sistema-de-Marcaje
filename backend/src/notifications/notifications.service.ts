@@ -100,7 +100,7 @@ export class NotificationsService {
       return;
     }
 
-    const hora = new Date(asistencia.horaMarcaje).toLocaleTimeString('es-ES', {
+    const hora = new Date(asistencia.horaMarcaje).toLocaleTimeString('es-BO', {
       hour: '2-digit',
       minute: '2-digit',
     });

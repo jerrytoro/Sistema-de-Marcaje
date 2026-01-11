@@ -1,10 +1,10 @@
 <template>
   <div class="main-wrapper">
     <Sidebar :isOpen="sidebarOpen" @close="sidebarOpen = false" />
-    
+
     <div class="main-content">
       <Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
-      
+
       <div class="content-area">
         <div class="container-fluid">
           <!-- Header -->
@@ -19,10 +19,7 @@
                 <span class="text-success ms-2">{{ funcionariosStore.funcionariosActivos }} activos</span>
               </p>
             </div>
-            <button 
-              class="btn btn-primary"
-              @click="funcionariosStore.loadFuncionarios()"
-            >
+            <button class="btn btn-primary" @click="funcionariosStore.loadFuncionarios()">
               <i class="bi bi-arrow-clockwise me-2"></i>
               Actualizar
             </button>
@@ -86,12 +83,8 @@
                     <i class="bi bi-search me-1"></i>
                     Buscar
                   </label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    placeholder="Nombre, apellido, cargo..."
-                    v-model="funcionariosStore.searchQuery"
-                  />
+                  <input type="text" class="form-control" placeholder="Nombre, apellido, cargo..."
+                    v-model="funcionariosStore.searchQuery" />
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">
@@ -129,10 +122,7 @@
                   </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                  <button 
-                    class="btn btn-outline-secondary w-100"
-                    @click="funcionariosStore.clearFilters()"
-                  >
+                  <button class="btn btn-outline-secondary w-100" @click="funcionariosStore.clearFilters()">
                     <i class="bi bi-x-circle me-1"></i>
                     Limpiar
                   </button>
@@ -176,7 +166,7 @@
                       <td>
                         <div class="d-flex align-items-center">
                           <div class="avatar bg-info bg-opacity-10 text-info rounded-circle me-2"
-                               style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                            style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                             <i class="bi bi-person-fill"></i>
                           </div>
                           <div>
@@ -203,22 +193,11 @@
                       </td>
                       <td>
                         <div class="btn-group btn-group-sm">
-                          <button
-                            class="btn btn-outline-info"
-                            @click="viewDetalle(funcionario)"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalDetalle"
-                            title="Ver detalle"
-                          >
+                          <button class="btn btn-outline-info" @click="viewDetalle(funcionario)" title="Ver detalle">
                             <i class="bi bi-eye"></i>
                           </button>
-                          <button
-                            class="btn btn-outline-primary"
-                            @click="selectFuncionarioEdit(funcionario)"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalEditar"
-                            title="Editar"
-                          >
+                          <button class="btn btn-outline-primary" @click="selectFuncionarioEdit(funcionario)"
+                            title="Editar">
                             <i class="bi bi-pencil"></i>
                           </button>
                         </div>
@@ -248,7 +227,7 @@
             <div class="row g-4">
               <div class="col-12 text-center">
                 <div class="avatar bg-info bg-opacity-10 text-info rounded-circle mx-auto"
-                     style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+                  style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
                   <i class="bi bi-person-fill" style="font-size: 2.5rem;"></i>
                 </div>
                 <h4 class="mt-3 mb-1">{{ selectedFuncionario.nombre }} {{ selectedFuncionario.apellido }}</h4>
@@ -331,48 +310,23 @@
             <form @submit.prevent="handleUpdate">
               <div class="mb-3">
                 <label class="form-label">Nombre</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="formEdit.nombre"
-                  required
-                />
+                <input type="text" class="form-control" v-model="formEdit.nombre" required />
               </div>
               <div class="mb-3">
                 <label class="form-label">Apellido</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="formEdit.apellido"
-                  required
-                />
+                <input type="text" class="form-control" v-model="formEdit.apellido" required />
               </div>
               <div class="mb-3">
                 <label class="form-label">Cargo</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="formEdit.cargo"
-                  required
-                />
+                <input type="text" class="form-control" v-model="formEdit.cargo" required />
               </div>
               <div class="mb-3">
                 <label class="form-label">Dependencia</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="formEdit.dependencia"
-                  required
-                />
+                <input type="text" class="form-control" v-model="formEdit.dependencia" required />
               </div>
               <div class="mb-3">
                 <div class="form-check form-switch">
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    v-model="formEdit.estado"
-                    id="estadoCheck"
-                  />
+                  <input class="form-check-input" type="checkbox" v-model="formEdit.estado" id="estadoCheck" />
                   <label class="form-check-label" for="estadoCheck">
                     Funcionario activo
                   </label>
@@ -415,9 +369,26 @@ const formEdit = reactive({
   dependencia: '',
   estado: true,
 });
+let modal: Modal | null = null;
+
+const abrirModalEditar = () => {
+  const modalElement = document.getElementById('modalEditar');
+  if (modalElement) {
+    modal = new Modal(modalElement);
+    modal.show();
+  }
+}
+const abrirModalDetalle = () => {
+  const modalElement = document.getElementById('modalDetalle');
+  if (modalElement) {
+    modal = new Modal(modalElement);
+    modal.show();
+  }
+}
 
 const viewDetalle = (funcionario: Funcionario) => {
   selectedFuncionario.value = funcionario;
+  abrirModalDetalle();
 };
 
 const selectFuncionarioEdit = (funcionario: Funcionario) => {
@@ -427,13 +398,14 @@ const selectFuncionarioEdit = (funcionario: Funcionario) => {
   formEdit.cargo = funcionario.cargo;
   formEdit.dependencia = funcionario.dependencia;
   formEdit.estado = funcionario.estado;
+  abrirModalEditar();
 };
 
 const handleUpdate = async () => {
   if (!selectedFuncionario.value) return;
-  
+
   const result = await funcionariosStore.updateFuncionario(selectedFuncionario.value.id, formEdit);
-  
+
   if (result.success) {
     const modal = Modal.getInstance(document.getElementById('modalEditar')!);
     modal?.hide();
@@ -444,7 +416,7 @@ const handleUpdate = async () => {
 };
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('es-ES', {
+  return new Date(date).toLocaleDateString('es-BO', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

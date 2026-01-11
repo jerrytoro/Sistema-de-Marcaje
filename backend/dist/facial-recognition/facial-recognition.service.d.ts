@@ -52,6 +52,8 @@ export declare class FacialRecognitionService {
         distancia: number;
         umbral: number;
     }>;
+    private determinarTipoMarcajePorVentana;
+    private calcularTardanzaOSalidaAnticipada;
     private calcularDistanciaEuclidiana;
     private determinarTipoMarcaje;
     private calcularAtraso;

@@ -14,6 +14,8 @@ const class_validator_1 = require("class-validator");
 class UpdateHorarioDto {
     horaProgramada;
     toleranciaMinutos;
+    horaInicioVentana;
+    horaFinVentana;
 }
 exports.UpdateHorarioDto = UpdateHorarioDto;
 __decorate([
@@ -31,6 +33,22 @@ __decorate([
     (0, class_validator_1.Max)(60, { message: 'La tolerancia no puede ser mayor a 60 minutos' }),
     __metadata("design:type", Number)
 ], UpdateHorarioDto.prototype, "toleranciaMinutos", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+        message: 'horaInicioVentana debe estar en formato HH:MM (24h)',
+    }),
+    __metadata("design:type", String)
+], UpdateHorarioDto.prototype, "horaInicioVentana", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+        message: 'horaFinVentana debe estar en formato HH:MM (24h)',
+    }),
+    __metadata("design:type", String)
+], UpdateHorarioDto.prototype, "horaFinVentana", void 0);
 class UpdateAllHorariosDto {
     INGRESO_MANANA;
     SALIDA_DESCANSO;

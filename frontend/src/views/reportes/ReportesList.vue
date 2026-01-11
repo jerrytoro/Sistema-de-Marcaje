@@ -1,10 +1,10 @@
 <template>
   <div class="main-wrapper">
     <Sidebar :isOpen="sidebarOpen" @close="sidebarOpen = false" />
-    
+
     <div class="main-content">
       <Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
-      
+
       <div class="content-area">
         <div class="container-fluid">
           <!-- Header -->
@@ -18,11 +18,7 @@
                 {{ reportesStore.totalReportes }} reportes generados
               </p>
             </div>
-            <button 
-              class="btn btn-primary"
-              data-bs-toggle="modal"
-              data-bs-target="#modalGenerar"
-            >
+            <button class="btn btn-primary" @click="abrirModal()">
               <i class="bi bi-plus-circle me-2"></i>
               Generar Reporte
             </button>
@@ -33,7 +29,7 @@
             <i class="bi bi-info-circle-fill fs-4 me-3"></i>
             <div>
               <strong>¿Qué son los reportes?</strong><br>
-              Los reportes PDF contienen el resumen mensual de asistencias de un funcionario, 
+              Los reportes PDF contienen el resumen mensual de asistencias de un funcionario,
               incluyendo marcajes, tardanzas, y estadísticas del mes.
             </div>
           </div>
@@ -79,10 +75,7 @@
                   </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                  <button 
-                    class="btn btn-outline-secondary w-100"
-                    @click="reportesStore.clearFilters()"
-                  >
+                  <button class="btn btn-outline-secondary w-100" @click="reportesStore.clearFilters()">
                     <i class="bi bi-x-circle me-1"></i>
                     Limpiar
                   </button>
@@ -144,7 +137,7 @@
                       </td>
                       <td>
                         <small class="text-muted">
-                          {{ formatFecha(reporte.generatedAt) }}
+                          {{ formatFecha(reporte.fechaGeneracion) }}
                         </small>
                       </td>
                       <td>
@@ -155,25 +148,13 @@
                       </td>
                       <td>
                         <div class="btn-group btn-group-sm">
-                          <button
-                            class="btn btn-outline-success"
-                            @click="descargar(reporte)"
-                            title="Descargar PDF"
-                          >
+                          <button class="btn btn-outline-success" @click="descargar(reporte)" title="Descargar PDF">
                             <i class="bi bi-download"></i>
                           </button>
-                          <button
-                            class="btn btn-outline-warning"
-                            @click="confirmRegenerar(reporte)"
-                            title="Regenerar"
-                          >
+                          <button class="btn btn-outline-warning" @click="confirmRegenerar(reporte)" title="Regenerar">
                             <i class="bi bi-arrow-clockwise"></i>
                           </button>
-                          <button
-                            class="btn btn-outline-danger"
-                            @click="confirmDelete(reporte)"
-                            title="Eliminar"
-                          >
+                          <button class="btn btn-outline-danger" @click="confirmDelete(reporte)" title="Eliminar">
                             <i class="bi bi-trash"></i>
                           </button>
                         </div>
@@ -298,12 +279,22 @@ const meses = [
 const currentYear = new Date().getFullYear();
 const anios = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
+let modal: Modal | null = null;
+
+const abrirModal = () => {
+  const modalElement = document.getElementById('modalGenerar');
+  if (modalElement) {
+    modal = new Modal(modalElement);
+    modal.show();
+  }
+}
+
 const getNombreMes = (mes: number) => {
   return meses.find(m => m.value === mes)?.label || mes.toString();
 };
 
 const formatFecha = (fecha: string) => {
-  return new Date(fecha).toLocaleString('es-ES', {
+  return new Date(fecha).toLocaleString('es-BO', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -314,16 +305,16 @@ const formatFecha = (fecha: string) => {
 
 const handleGenerar = async () => {
   const result = await reportesStore.generarReporte(formGenerar);
-  
+
   if (result.success) {
     const modal = Modal.getInstance(document.getElementById('modalGenerar')!);
     modal?.hide();
-    
+
     // Reset form
     formGenerar.funcionarioId = 0;
     formGenerar.mes = new Date().getMonth() + 1;
     formGenerar.anio = new Date().getFullYear();
-    
+
     alert('Reporte generado exitosamente');
   } else {
     alert(`Error: ${result.error}`);
@@ -332,7 +323,7 @@ const handleGenerar = async () => {
 
 const descargar = async (reporte: Reporte) => {
   const result = await reportesStore.descargarReporte(reporte.id);
-  
+
   if (!result.success) {
     alert(`Error: ${result.error}`);
   }
@@ -342,9 +333,9 @@ const confirmRegenerar = async (reporte: Reporte) => {
   if (!confirm(`¿Está seguro de regenerar el reporte de ${reporte.funcionario?.nombre}?`)) {
     return;
   }
-  
+
   const result = await reportesStore.regenerarReporte(reporte.id);
-  
+
   if (result.success) {
     alert('Reporte regenerado exitosamente');
   } else {
@@ -356,9 +347,9 @@ const confirmDelete = async (reporte: Reporte) => {
   if (!confirm(`¿Está seguro de eliminar este reporte?`)) {
     return;
   }
-  
+
   const result = await reportesStore.deleteReporte(reporte.id);
-  
+
   if (result.success) {
     alert('Reporte eliminado exitosamente');
   } else {

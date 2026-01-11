@@ -53,7 +53,7 @@ let ReportesService = class ReportesService {
             },
         });
         const diasUnicos = new Set(marcajes.map(m => m.fecha.toISOString().split('T')[0])).size;
-        const totalMinutosTardanza = marcajes.reduce((sum, m) => sum + m.minutosTardanza, 0);
+        const totalMinutosTardanza = marcajes.reduce((sum, m) => sum + (m.minutosTardanza || 0), 0);
         const totalMinutosTrabajados = diasUnicos * 480;
         const reporte = await this.prisma.resumenMensual.create({
             data: {
@@ -66,6 +66,7 @@ let ReportesService = class ReportesService {
                 totalAusencias: 0,
                 totalPermisos: 0,
                 reporteGenerado: true,
+                fechaGeneracion: new Date(),
                 urlReportePdf: null,
             },
             include: {
@@ -80,7 +81,10 @@ let ReportesService = class ReportesService {
                 },
             },
         });
-        return reporte;
+        return {
+            ...reporte,
+            fechaGeneracion: reporte.fechaGeneracion?.toISOString() || new Date().toISOString(),
+        };
     }
     async findAll() {
         const reportes = await this.prisma.resumenMensual.findMany({
@@ -100,7 +104,10 @@ let ReportesService = class ReportesService {
                 { mes: 'desc' },
             ],
         });
-        return reportes;
+        return reportes.map(reporte => ({
+            ...reporte,
+            fechaGeneracion: reporte.fechaGeneracion?.toISOString() || new Date().toISOString(),
+        }));
     }
     async findOne(id) {
         const reporte = await this.prisma.resumenMensual.findUnique({
@@ -120,7 +127,10 @@ let ReportesService = class ReportesService {
         if (!reporte) {
             throw new common_1.NotFoundException(`Reporte con ID ${id} no encontrado`);
         }
-        return reporte;
+        return {
+            ...reporte,
+            fechaGeneracion: reporte.fechaGeneracion?.toISOString() || new Date().toISOString(),
+        };
     }
     async findByFuncionario(funcionarioId) {
         const funcionario = await this.prisma.funcionario.findUnique({
@@ -147,7 +157,10 @@ let ReportesService = class ReportesService {
                 { mes: 'desc' },
             ],
         });
-        return reportes;
+        return reportes.map(reporte => ({
+            ...reporte,
+            fechaGeneracion: reporte.fechaGeneracion?.toISOString() || new Date().toISOString(),
+        }));
     }
     async descargarPDF(id, res) {
         const reporte = await this.findOne(id);
@@ -155,7 +168,7 @@ let ReportesService = class ReportesService {
         const fechaFin = new Date(reporte.anio, reporte.mes, 0);
         const marcajes = await this.prisma.asistencia.findMany({
             where: {
-                funcionarioId: reporte.funcionarioId,
+                funcionarioId: reporte.funcionario.id,
                 fecha: {
                     gte: fechaInicio,
                     lte: fechaFin,
@@ -188,7 +201,7 @@ let ReportesService = class ReportesService {
                 fecha: m.fecha.toISOString().split('T')[0],
                 tipoMarcaje: m.tipoMarcaje,
                 horaMarcaje: m.horaMarcaje.toTimeString().substring(0, 5),
-                minutosTardanza: m.minutosTardanza,
+                minutosTardanza: m.minutosTardanza || 0,
             })),
         };
         await pdf_generator_1.PDFGenerator.generarReporteMensual(datosReporte, res);
@@ -199,7 +212,7 @@ let ReportesService = class ReportesService {
         const fechaFin = new Date(reporteExistente.anio, reporteExistente.mes, 0);
         const marcajes = await this.prisma.asistencia.findMany({
             where: {
-                funcionarioId: reporteExistente.funcionarioId,
+                funcionarioId: reporteExistente.funcionario.id,
                 fecha: {
                     gte: fechaInicio,
                     lte: fechaFin,
@@ -207,7 +220,7 @@ let ReportesService = class ReportesService {
             },
         });
         const diasUnicos = new Set(marcajes.map(m => m.fecha.toISOString().split('T')[0])).size;
-        const totalMinutosTardanza = marcajes.reduce((sum, m) => sum + m.minutosTardanza, 0);
+        const totalMinutosTardanza = marcajes.reduce((sum, m) => sum + (m.minutosTardanza || 0), 0);
         const totalMinutosTrabajados = diasUnicos * 480;
         const reporteActualizado = await this.prisma.resumenMensual.update({
             where: { id },
@@ -229,7 +242,10 @@ let ReportesService = class ReportesService {
                 },
             },
         });
-        return reporteActualizado;
+        return {
+            ...reporteActualizado,
+            fechaGeneracion: reporteActualizado.fechaGeneracion?.toISOString() || new Date().toISOString(),
+        };
     }
     async remove(id) {
         const reporte = await this.findOne(id);

@@ -16,6 +16,20 @@ export class UpdateHorarioDto {
   @Min(0, { message: 'La tolerancia no puede ser negativa' })
   @Max(60, { message: 'La tolerancia no puede ser mayor a 60 minutos' })
   toleranciaMinutos?: number;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+    message: 'horaInicioVentana debe estar en formato HH:MM (24h)',
+  })
+  horaInicioVentana?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+    message: 'horaFinVentana debe estar en formato HH:MM (24h)',
+  })
+  horaFinVentana?: string;
 }
 
 /**

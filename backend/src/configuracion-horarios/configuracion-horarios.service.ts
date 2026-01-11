@@ -165,53 +165,142 @@ export class ConfiguracionHorariosService {
   /**
    * Obtener el siguiente marcaje esperado según la hora actual
    */
-  async getSiguienteMarcaje() {
-    const ahora = new Date();
-    const horaActual = `${ahora.getHours().toString().padStart(2, '0')}:${ahora.getMinutes().toString().padStart(2, '0')}`;
+  // async getSiguienteMarcaje() {
+  //   const ahora = new Date();
+  //   const horaActual = `${ahora.getHours().toString().padStart(2, '0')}:${ahora.getMinutes().toString().padStart(2, '0')}`;
 
-    const horarios = await this.findAll();
+  //   const horarios = await this.findAll();
 
-    if (horarios.length === 0) {
-      return {
-        mensaje: 'No hay horarios configurados',
-      };
-    }
+  //   if (horarios.length === 0) {
+  //     return {
+  //       mensaje: 'No hay horarios configurados',
+  //     };
+  //   }
 
-    // Convertir hora actual a minutos
-    const [h, m] = horaActual.split(':').map(Number);
-    const minutosActual = h * 60 + m;
+  //   // Convertir hora actual a minutos
+  //   const [h, m] = horaActual.split(':').map(Number);
+  //   const minutosActual = h * 60 + m;
 
-    // Encontrar el siguiente marcaje
-    for (const horario of horarios) {
-      const [hh, mm] = horario.horaProgramada.split(':').map(Number);
-      const minutosHorario = hh * 60 + mm;
+  //   // Encontrar el siguiente marcaje
+  //   for (const horario of horarios) {
+  //     const [hh, mm] = horario.horaProgramada.split(':').map(Number);
+  //     const minutosHorario = hh * 60 + mm;
 
-      // Si aún no ha pasado este horario
-      if (minutosActual < minutosHorario + horario.toleranciaMinutos) {
-        return {
-          tipoMarcaje: horario.tipoMarcaje,
-          horaProgramada: horario.horaProgramada,
-          toleranciaMinutos: horario.toleranciaMinutos,
-          minutosRestantes: minutosHorario - minutosActual,
-        };
-      }
-    }
+  //     // Si aún no ha pasado este horario
+  //     if (minutosActual < minutosHorario + horario.toleranciaMinutos) {
+  //       return {
+  //         tipoMarcaje: horario.tipoMarcaje,
+  //         horaProgramada: horario.horaProgramada,
+  //         toleranciaMinutos: horario.toleranciaMinutos,
+  //         minutosRestantes: minutosHorario - minutosActual,
+  //       };
+  //     }
+  //   }
 
-    // Si ya pasaron todos los horarios, retornar el primero del día siguiente
-    const primerHorario = horarios[0];
-    if (primerHorario) {
-      return {
-        tipoMarcaje: primerHorario.tipoMarcaje,
-        horaProgramada: primerHorario.horaProgramada,
-        toleranciaMinutos: primerHorario.toleranciaMinutos,
-        mensaje: 'Todos los marcajes del día completados',
-      };
-    }
+  //   // Si ya pasaron todos los horarios, retornar el primero del día siguiente
+  //   const primerHorario = horarios[0];
+  //   if (primerHorario) {
+  //     return {
+  //       tipoMarcaje: primerHorario.tipoMarcaje,
+  //       horaProgramada: primerHorario.horaProgramada,
+  //       toleranciaMinutos: primerHorario.toleranciaMinutos,
+  //       mensaje: 'Todos los marcajes del día completados',
+  //     };
+  //   }
 
+  //   return {
+  //     mensaje: 'No hay horarios configurados',
+  //   };
+  // }
+  /**
+ * Obtener el siguiente marcaje esperado según la hora actual
+ * Basado en las VENTANAS DE TIEMPO (horaInicioVentana y horaFinVentana)
+ */
+async getSiguienteMarcaje() {
+  const ahora = new Date();
+  const horaActual = `${ahora.getHours().toString().padStart(2, '0')}:${ahora.getMinutes().toString().padStart(2, '0')}`;
+
+  const horarios = await this.findAll();
+
+  if (horarios.length === 0) {
     return {
       mensaje: 'No hay horarios configurados',
     };
   }
+
+  console.log('🕐 Hora actual:', horaActual);
+
+  // ✅ PASO 1: Verificar si estamos DENTRO de alguna ventana activa
+  for (const horario of horarios) {
+    if (horario.horaInicioVentana && horario.horaFinVentana) {
+      // Si la hora actual está dentro de la ventana, ese es el marcaje activo
+      if (horaActual >= horario.horaInicioVentana && horaActual <= horario.horaFinVentana) {
+        console.log('✅ Dentro de ventana:', horario.tipoMarcaje);
+        
+        // Calcular minutos restantes hasta el fin de la ventana
+        const [hFin, mFin] = horario.horaFinVentana.split(':').map(Number);
+        const [hActual, mActual] = horaActual.split(':').map(Number);
+        const minutosRestantes = (hFin * 60 + mFin) - (hActual * 60 + mActual);
+        
+        return {
+          tipoMarcaje: horario.tipoMarcaje,
+          horaProgramada: horario.horaProgramada,
+          horaInicioVentana: horario.horaInicioVentana,
+          horaFinVentana: horario.horaFinVentana,
+          toleranciaMinutos: horario.toleranciaMinutos,
+          minutosRestantes: minutosRestantes,
+          mensaje: `Ventana activa hasta ${horario.horaFinVentana}`,
+        };
+      }
+    }
+  }
+
+  console.log('⏭️ No estamos en ninguna ventana, buscando la próxima...');
+
+  // ✅ PASO 2: Si no estamos en ninguna ventana, buscar la PRÓXIMA ventana
+  for (const horario of horarios) {
+    if (horario.horaInicioVentana && horario.horaFinVentana) {
+      // Si la ventana aún no ha empezado
+      if (horaActual < horario.horaInicioVentana) {
+        console.log('⏭️ Próxima ventana:', horario.tipoMarcaje);
+        
+        // Calcular minutos hasta que inicie la ventana
+        const [hInicio, mInicio] = horario.horaInicioVentana.split(':').map(Number);
+        const [hActual, mActual] = horaActual.split(':').map(Number);
+        const minutosHastaInicio = (hInicio * 60 + mInicio) - (hActual * 60 + mActual);
+        
+        return {
+          tipoMarcaje: horario.tipoMarcaje,
+          horaProgramada: horario.horaProgramada,
+          horaInicioVentana: horario.horaInicioVentana,
+          horaFinVentana: horario.horaFinVentana,
+          toleranciaMinutos: horario.toleranciaMinutos,
+          minutosRestantes: minutosHastaInicio,
+          mensaje: `Se activará a las ${horario.horaInicioVentana}`,
+        };
+      }
+    }
+  }
+
+  console.log('✅ Todas las ventanas completadas');
+
+  // ✅ PASO 3: Si ya pasaron todas las ventanas del día
+  const primerHorario = horarios[0];
+  if (primerHorario) {
+    return {
+      tipoMarcaje: primerHorario.tipoMarcaje,
+      horaProgramada: primerHorario.horaProgramada,
+      horaInicioVentana: primerHorario.horaInicioVentana,
+      horaFinVentana: primerHorario.horaFinVentana,
+      toleranciaMinutos: primerHorario.toleranciaMinutos,
+      mensaje: 'Todos los marcajes del día completados. Próximo: mañana',
+    };
+  }
+
+  return {
+    mensaje: 'No hay horarios configurados',
+  };
+}
 
   /**
    * Validar formato de jornada completa

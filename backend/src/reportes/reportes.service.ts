@@ -62,12 +62,12 @@ export class ReportesService {
 
     // Calcular estadísticas
     const diasUnicos = new Set(marcajes.map(m => m.fecha.toISOString().split('T')[0])).size;
-    const totalMinutosTardanza = marcajes.reduce((sum, m) => sum + m.minutosTardanza, 0);
+    const totalMinutosTardanza = marcajes.reduce((sum, m) => sum + (m.minutosTardanza || 0), 0);
 
     // Calcular minutos trabajados (simplificado)
     const totalMinutosTrabajados = diasUnicos * 480; // 8 horas = 480 minutos por día
 
-    // Crear el reporte
+    // Crear el reporte con fecha de generación
     const reporte = await this.prisma.resumenMensual.create({
       data: {
         funcionarioId,
@@ -79,6 +79,7 @@ export class ReportesService {
         totalAusencias: 0, // Por implementar
         totalPermisos: 0, // Por implementar
         reporteGenerado: true,
+        fechaGeneracion: new Date(), // ✅ AGREGADO: Fecha de generación
         urlReportePdf: null, // Se guardará cuando se descargue
       },
       include: {
@@ -94,7 +95,11 @@ export class ReportesService {
       },
     });
 
-    return reporte;
+    // ✅ AGREGADO: Retornar con fecha de generación en formato ISO
+    return {
+      ...reporte,
+      fechaGeneracion: reporte.fechaGeneracion?.toISOString() || new Date().toISOString(),
+    };
   }
 
   /**
@@ -119,7 +124,11 @@ export class ReportesService {
       ],
     });
 
-    return reportes;
+    // ✅ CORREGIDO: Transformar fechas a ISO string para evitar "Invalid Date"
+    return reportes.map(reporte => ({
+      ...reporte,
+      fechaGeneracion: reporte.fechaGeneracion?.toISOString() || new Date().toISOString(),
+    }));
   }
 
   /**
@@ -145,7 +154,11 @@ export class ReportesService {
       throw new NotFoundException(`Reporte con ID ${id} no encontrado`);
     }
 
-    return reporte;
+    // ✅ CORREGIDO: Retornar con fecha en formato ISO
+    return {
+      ...reporte,
+      fechaGeneracion: reporte.fechaGeneracion?.toISOString() || new Date().toISOString(),
+    };
   }
 
   /**
@@ -179,7 +192,11 @@ export class ReportesService {
       ],
     });
 
-    return reportes;
+    // ✅ CORREGIDO: Transformar fechas a ISO string
+    return reportes.map(reporte => ({
+      ...reporte,
+      fechaGeneracion: reporte.fechaGeneracion?.toISOString() || new Date().toISOString(),
+    }));
   }
 
   /**
@@ -194,7 +211,7 @@ export class ReportesService {
 
     const marcajes = await this.prisma.asistencia.findMany({
       where: {
-        funcionarioId: reporte.funcionarioId,
+        funcionarioId: reporte.funcionario.id,
         fecha: {
           gte: fechaInicio,
           lte: fechaFin,
@@ -229,7 +246,7 @@ export class ReportesService {
         fecha: m.fecha.toISOString().split('T')[0],
         tipoMarcaje: m.tipoMarcaje,
         horaMarcaje: m.horaMarcaje.toTimeString().substring(0, 5),
-        minutosTardanza: m.minutosTardanza,
+        minutosTardanza: m.minutosTardanza || 0,
       })),
     };
 
@@ -249,7 +266,7 @@ export class ReportesService {
 
     const marcajes = await this.prisma.asistencia.findMany({
       where: {
-        funcionarioId: reporteExistente.funcionarioId,
+        funcionarioId: reporteExistente.funcionario.id,
         fecha: {
           gte: fechaInicio,
           lte: fechaFin,
@@ -259,7 +276,7 @@ export class ReportesService {
 
     // Recalcular estadísticas
     const diasUnicos = new Set(marcajes.map(m => m.fecha.toISOString().split('T')[0])).size;
-    const totalMinutosTardanza = marcajes.reduce((sum, m) => sum + m.minutosTardanza, 0);
+    const totalMinutosTardanza = marcajes.reduce((sum, m) => sum + (m.minutosTardanza || 0), 0);
     const totalMinutosTrabajados = diasUnicos * 480;
 
     // Actualizar el reporte
@@ -269,7 +286,7 @@ export class ReportesService {
         totalDiasTrabajados: diasUnicos,
         totalMinutosTardanza,
         totalMinutosTrabajados,
-        fechaGeneracion: new Date(),
+        fechaGeneracion: new Date(), // ✅ ACTUALIZAR fecha de generación
       },
       include: {
         funcionario: {
@@ -284,7 +301,11 @@ export class ReportesService {
       },
     });
 
-    return reporteActualizado;
+    // ✅ CORREGIDO: Retornar con fecha en formato ISO
+    return {
+      ...reporteActualizado,
+      fechaGeneracion: reporteActualizado.fechaGeneracion?.toISOString() || new Date().toISOString(),
+    };
   }
 
   /**

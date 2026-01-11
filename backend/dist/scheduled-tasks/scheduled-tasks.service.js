@@ -306,7 +306,7 @@ let ScheduledTasksService = ScheduledTasksService_1 = class ScheduledTasksServic
 };
 exports.ScheduledTasksService = ScheduledTasksService;
 __decorate([
-    (0, schedule_1.Cron)('0 19 * * *', {
+    (0, schedule_1.Cron)('30 18 * * *', {
         name: 'verificar-salidas-no-registradas',
         timeZone: 'America/La_Paz',
     }),

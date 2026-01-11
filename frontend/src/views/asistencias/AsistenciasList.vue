@@ -1,10 +1,10 @@
 <template>
   <div class="main-wrapper">
     <Sidebar :isOpen="sidebarOpen" @close="sidebarOpen = false" />
-    
+
     <div class="main-content">
       <Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
-      
+
       <div class="content-area">
         <div class="container-fluid">
           <!-- Header -->
@@ -18,11 +18,7 @@
                 {{ asistenciasStore.asistenciasHoy.length }} marcajes hoy
               </p>
             </div>
-            <button 
-              class="btn btn-primary"
-              data-bs-toggle="modal"
-              data-bs-target="#modalCrear"
-            >
+            <button class="btn btn-primary" @click="abrirModalCrear()">
               <i class="bi bi-plus-circle me-2"></i>
               Nuevo Marcaje
             </button>
@@ -31,23 +27,13 @@
           <!-- Tabs -->
           <ul class="nav nav-tabs mb-4" role="tablist">
             <li class="nav-item">
-              <button 
-                class="nav-link active" 
-                data-bs-toggle="tab" 
-                data-bs-target="#hoy"
-                @click="loadHoy"
-              >
+              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#hoy" @click="loadHoy">
                 <i class="bi bi-calendar-day me-2"></i>
                 Hoy
               </button>
             </li>
             <li class="nav-item">
-              <button 
-                class="nav-link" 
-                data-bs-toggle="tab" 
-                data-bs-target="#todas"
-                @click="loadTodas"
-              >
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#todas" @click="loadTodas">
                 <i class="bi bi-calendar3 me-2"></i>
                 Todas
               </button>
@@ -76,7 +62,8 @@
                           <th>Hora</th>
                           <th>Funcionario</th>
                           <th>Tipo Marcaje</th>
-                          <th>Tardanza</th>
+                          <th>Ingreso Tarde</th>
+                          <th>Salida Anticipada</th>
                           <th>Estado</th>
                           <th>Acciones</th>
                         </tr>
@@ -104,15 +91,38 @@
                               {{ formatTipoMarcaje(asistencia.tipoMarcaje) }}
                             </span>
                           </td>
+                          <!-- ✅ COLUMNA INGRESO TARDE: Solo para INGRESOS -->
                           <td>
-                            <span v-if="asistencia.minutosTardanza > 0" class="text-warning fw-semibold">
-                              <i class="bi bi-clock me-1"></i>
+                            <span
+                              v-if="(asistencia.tipoMarcaje === 'INGRESO_MANANA' || asistencia.tipoMarcaje === 'INGRESO_TARDE') && asistencia.minutosTardanza > 0"
+                              class="text-warning fw-semibold">
+                              <i class="bi bi-clock-history me-1"></i>
                               {{ asistencia.minutosTardanza }} min
                             </span>
-                            <span v-else class="text-success">
+                            <span
+                              v-else-if="asistencia.tipoMarcaje === 'INGRESO_MANANA' || asistencia.tipoMarcaje === 'INGRESO_TARDE'"
+                              class="text-success">
                               <i class="bi bi-check-circle-fill me-1"></i>
                               A tiempo
                             </span>
+                            <span v-else class="text-muted">-</span>
+                          </td>
+
+                          <!-- ✅ COLUMNA SALIDA ANTICIPADA: Solo para SALIDAS -->
+                          <td>
+                            <span
+                              v-if="(asistencia.tipoMarcaje === 'SALIDA_DESCANSO' || asistencia.tipoMarcaje === 'SALIDA_FINAL') && asistencia.minutosSalidaAnticipada > 0"
+                              class="text-danger">
+                              <i class="bi bi-exclamation-circle-fill me-1"></i>
+                              {{ asistencia.minutosSalidaAnticipada }} min
+                            </span>
+                            <span
+                              v-else-if="asistencia.tipoMarcaje === 'SALIDA_DESCANSO' || asistencia.tipoMarcaje === 'SALIDA_FINAL'"
+                              class="text-success">
+                              <i class="bi bi-check-circle-fill me-1"></i>
+                              Normal
+                            </span>
+                            <span v-else class="text-muted">-</span>
                           </td>
                           <td>
                             <span v-if="asistencia.verificado" class="badge bg-success">
@@ -124,20 +134,12 @@
                           </td>
                           <td>
                             <div class="btn-group btn-group-sm">
-                              <button
-                                class="btn btn-outline-primary"
-                                @click="selectAsistenciaEdit(asistencia)"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modalEditar"
-                                title="Editar"
-                              >
+                              <button class="btn btn-outline-primary" @click="selectAsistenciaEdit(asistencia)"
+                                title="Editar">
                                 <i class="bi bi-pencil"></i>
                               </button>
-                              <button
-                                class="btn btn-outline-danger"
-                                @click="confirmDelete(asistencia)"
-                                title="Eliminar"
-                              >
+                              <button class="btn btn-outline-danger" @click="confirmDelete(asistencia)"
+                                title="Eliminar">
                                 <i class="bi bi-trash"></i>
                               </button>
                             </div>
@@ -158,11 +160,7 @@
                   <div class="row g-3">
                     <div class="col-md-4">
                       <label class="form-label">Fecha</label>
-                      <input
-                        type="date"
-                        class="form-control"
-                        v-model="asistenciasStore.filterFecha"
-                      />
+                      <input type="date" class="form-control" v-model="asistenciasStore.filterFecha" />
                     </div>
                     <div class="col-md-3">
                       <label class="form-label">Tipo Marcaje</label>
@@ -175,10 +173,7 @@
                       </select>
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
-                      <button 
-                        class="btn btn-outline-secondary w-100"
-                        @click="asistenciasStore.clearFilters()"
-                      >
+                      <button class="btn btn-outline-secondary w-100" @click="asistenciasStore.clearFilters()">
                         <i class="bi bi-x-circle me-1"></i>
                         Limpiar
                       </button>
@@ -202,7 +197,9 @@
                           <th>Hora</th>
                           <th>Funcionario</th>
                           <th>Tipo</th>
-                          <th>Tardanza</th>
+                          <th>Ingreso Tarde</th>
+                          <th>Salida Anticipada</th>
+                          <th>Estado</th>
                           <th>Acciones</th>
                         </tr>
                       </thead>
@@ -212,7 +209,8 @@
                             No hay asistencias registradas
                           </td>
                         </tr>
-                        <tr v-for="asistencia in asistenciasStore.asistenciasFiltradas.slice(0, 50)" :key="asistencia.id">
+                        <tr v-for="asistencia in asistenciasStore.asistenciasFiltradas.slice(0, 50)"
+                          :key="asistencia.id">
                           <td>{{ formatFecha(asistencia.fecha) }}</td>
                           <td>{{ formatHora(asistencia.horaMarcaje) }}</td>
                           <td>
@@ -223,26 +221,50 @@
                               {{ formatTipoMarcaje(asistencia.tipoMarcaje) }}
                             </span>
                           </td>
+                          <!-- ✅ COLUMNA INGRESO TARDE: Solo para INGRESOS -->
                           <td>
-                            <span v-if="asistencia.minutosTardanza > 0" class="text-warning">
+                            <span
+                              v-if="(asistencia.tipoMarcaje === 'INGRESO_MANANA' || asistencia.tipoMarcaje === 'INGRESO_TARDE') && asistencia.minutosTardanza > 0"
+                              class="text-warning fw-semibold">
+                              <i class="bi bi-clock-history me-1"></i>
                               {{ asistencia.minutosTardanza }} min
                             </span>
-                            <span v-else class="text-success">-</span>
+                            <span
+                              v-else-if="asistencia.tipoMarcaje === 'INGRESO_MANANA' || asistencia.tipoMarcaje === 'INGRESO_TARDE'"
+                              class="text-success">
+                              <i class="bi bi-check-circle-fill me-1"></i>
+                              A tiempo
+                            </span>
+                            <span v-else class="text-muted">-</span>
+                          </td>
+
+                          <!-- ✅ COLUMNA SALIDA ANTICIPADA: Solo para SALIDAS -->
+                          <td>
+                            <span
+                              v-if="(asistencia.tipoMarcaje === 'SALIDA_DESCANSO' || asistencia.tipoMarcaje === 'SALIDA_FINAL') && asistencia.minutosSalidaAnticipada > 0"
+                              class="text-danger">
+                              <i class="bi bi-exclamation-circle-fill me-1"></i>
+                              {{ asistencia.minutosSalidaAnticipada }} min
+                            </span>
+                            <span
+                              v-else-if="asistencia.tipoMarcaje === 'SALIDA_DESCANSO' || asistencia.tipoMarcaje === 'SALIDA_FINAL'"
+                              class="text-success">
+                              <i class="bi bi-check-circle-fill me-1"></i>
+                              Normal
+                            </span>
+                            <span v-else class="text-muted">-</span>
+                          </td>
+                          <td>
+                            <span :class="asistencia.verificado ? 'badge bg-success' : 'badge bg-secondary'">
+                              {{ asistencia.verificado ? 'Verificado' : 'Pendiente' }}
+                            </span>
                           </td>
                           <td>
                             <div class="btn-group btn-group-sm">
-                              <button
-                                class="btn btn-outline-primary"
-                                @click="selectAsistenciaEdit(asistencia)"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modalEditar"
-                              >
+                              <button class="btn btn-outline-primary" @click="selectAsistenciaEdit(asistencia)">
                                 <i class="bi bi-pencil"></i>
                               </button>
-                              <button
-                                class="btn btn-outline-danger"
-                                @click="confirmDelete(asistencia)"
-                              >
+                              <button class="btn btn-outline-danger" @click="confirmDelete(asistencia)">
                                 <i class="bi bi-trash"></i>
                               </button>
                             </div>
@@ -270,56 +292,62 @@
             </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
+          <!-- ✅ DESPUÉS -->
           <div class="modal-body">
             <form @submit.prevent="handleCreate">
               <div class="mb-3">
                 <label class="form-label">Funcionario *</label>
-                <select class="form-select" v-model="formCreate.funcionarioId" required>
-                  <option value="">Seleccionar...</option>
+                <select class="form-select" v-model.number="formCreate.funcionarioId" required>
+                  <option value="0" disabled>Seleccionar...</option>
                   <option v-for="func in funcionarios" :key="func.id" :value="func.id">
                     {{ func.nombre }} {{ func.apellido }} - {{ func.cargo }}
                   </option>
                 </select>
               </div>
+
               <div class="mb-3">
                 <label class="form-label">Fecha *</label>
-                <input
-                  type="date"
-                  class="form-control"
-                  v-model="formCreate.fecha"
-                  required
-                />
+                <input type="date" class="form-control" v-model="formCreate.fecha" required />
               </div>
+
               <div class="mb-3">
                 <label class="form-label">Hora de Marcaje *</label>
-                <input
-                  type="time"
-                  class="form-control"
-                  v-model="formCreate.horaMarcaje"
-                  required
-                />
+                <input type="time" class="form-control" v-model="formCreate.horaMarcaje" required />
               </div>
+
               <div class="mb-3">
                 <label class="form-label">Tipo de Marcaje *</label>
                 <select class="form-select" v-model="formCreate.tipoMarcaje" required>
-                  <option value="">Seleccionar...</option>
                   <option value="INGRESO_MANANA">Ingreso Mañana</option>
                   <option value="SALIDA_DESCANSO">Salida Descanso</option>
                   <option value="INGRESO_TARDE">Ingreso Tarde</option>
                   <option value="SALIDA_FINAL">Salida Final</option>
                 </select>
               </div>
-              <div class="mb-3">
-                <label class="form-label">Minutos de Tardanza</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  v-model.number="formCreate.minutosTardanza"
-                  min="0"
-                />
+
+              <!-- ✅ CONDICIONAL: Solo mostrar tardanza para INGRESOS -->
+              <div v-if="formCreate.tipoMarcaje === 'INGRESO_MANANA' || formCreate.tipoMarcaje === 'INGRESO_TARDE'"
+                class="mb-3">
+                <label class="form-label">
+                  <i class="bi bi-clock me-1"></i>
+                  Minutos de Tardanza
+                </label>
+                <input type="number" class="form-control" v-model.number="formCreate.minutosTardanza" min="0" />
+                <small class="text-muted">Tiempo de retraso respecto a la hora programada</small>
               </div>
 
-              <div class="modal-footer border-0 px-0 pb-0">
+              <!-- ✅ CONDICIONAL: Solo mostrar salida anticipada para SALIDAS -->
+              <div v-if="formCreate.tipoMarcaje === 'SALIDA_DESCANSO' || formCreate.tipoMarcaje === 'SALIDA_FINAL'"
+                class="mb-3">
+                <label class="form-label">
+                  <i class="bi bi-exclamation-circle me-1"></i>
+                  Minutos de Salida Anticipada
+                </label>
+                <input type="number" class="form-control" v-model.number="formCreate.minutosSalidaAnticipada" min="0" />
+                <small class="text-muted">Tiempo que salió antes de la hora programada</small>
+              </div>
+
+              <div class="modal-footer border-0 px-0 pb-0 mt-4">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                   Cancelar
                 </button>
@@ -345,32 +373,48 @@
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
+          <!-- ✅ DESPUÉS -->
           <div class="modal-body">
             <form @submit.prevent="handleUpdate">
+              <!-- Tipo de Marcaje (solo lectura) -->
+              <div class="mb-3">
+                <label class="form-label">Tipo de Marcaje</label>
+                <input type="text" class="form-control"
+                  :value="selectedAsistencia ? formatTipoMarcaje(selectedAsistencia.tipoMarcaje) : ''" disabled />
+              </div>
+
               <div class="mb-3">
                 <label class="form-label">Hora de Marcaje</label>
-                <input
-                  type="time"
-                  class="form-control"
-                  v-model="formEdit.horaMarcaje"
-                />
+                <input type="time" class="form-control" v-model="formEdit.horaMarcaje" />
               </div>
-              <div class="mb-3">
-                <label class="form-label">Minutos de Tardanza</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  v-model.number="formEdit.minutosTardanza"
-                  min="0"
-                />
+
+              <!-- ✅ CONDICIONAL: Solo mostrar tardanza para INGRESOS -->
+              <div
+                v-if="selectedAsistencia && (selectedAsistencia.tipoMarcaje === 'INGRESO_MANANA' || selectedAsistencia.tipoMarcaje === 'INGRESO_TARDE')"
+                class="mb-3">
+                <label class="form-label">
+                  <i class="bi bi-clock me-1"></i>
+                  Minutos de Tardanza
+                </label>
+                <input type="number" class="form-control" v-model.number="formEdit.minutosTardanza" min="0" />
+                <small class="text-muted">Tiempo de retraso respecto a la hora programada</small>
               </div>
+
+              <!-- ✅ CONDICIONAL: Solo mostrar salida anticipada para SALIDAS -->
+              <div
+                v-if="selectedAsistencia && (selectedAsistencia.tipoMarcaje === 'SALIDA_DESCANSO' || selectedAsistencia.tipoMarcaje === 'SALIDA_FINAL')"
+                class="mb-3">
+                <label class="form-label">
+                  <i class="bi bi-exclamation-circle me-1"></i>
+                  Minutos de Salida Anticipada
+                </label>
+                <input type="number" class="form-control" v-model.number="formEdit.minutosSalidaAnticipada" min="0" />
+                <small class="text-muted">Tiempo que salió antes de la hora programada</small>
+              </div>
+
               <div class="mb-3">
                 <label class="form-label">Observación</label>
-                <textarea
-                  class="form-control"
-                  v-model="formEdit.observacion"
-                  rows="3"
-                ></textarea>
+                <textarea class="form-control" v-model="formEdit.observacion" rows="3"></textarea>
               </div>
 
               <div class="modal-footer border-0 px-0 pb-0">
@@ -410,13 +454,32 @@ const formCreate = reactive<CreateAsistenciaDto>({
   horaMarcaje: new Date().toTimeString().slice(0, 5),
   tipoMarcaje: 'INGRESO_MANANA' as any,
   minutosTardanza: 0,
+  minutosSalidaAnticipada: 0,
 });
 
 const formEdit = reactive<UpdateAsistenciaDto>({
   horaMarcaje: '',
   minutosTardanza: 0,
+  minutosSalidaAnticipada: 0,
   observacion: '',
 });
+
+let modal: Modal | null = null;
+
+const abrirModalCrear = () => {
+  const modalElement = document.getElementById('modalCrear');
+  if (modalElement) {
+    modal = new Modal(modalElement);
+    modal.show();
+  }
+}
+const abrirModalEditar = () => {
+  const modalElement = document.getElementById('modalEditar');
+  if (modalElement) {
+    modal = new Modal(modalElement);
+    modal.show();
+  }
+}
 
 const getTipoBadgeClass = (tipo: string) => {
   const classes: { [key: string]: string } = {
@@ -439,14 +502,16 @@ const formatTipoMarcaje = (tipo: string) => {
 };
 
 const formatHora = (hora: string) => {
-  return new Date(hora).toLocaleTimeString('es-ES', {
+  return new Date(hora).toLocaleTimeString('es-BO', {
     hour: '2-digit',
     minute: '2-digit',
   });
 };
 
 const formatFecha = (fecha: string) => {
-  return new Date(fecha).toLocaleDateString('es-ES');
+  const fechaSolo = fecha.split('T')[0];
+  const [year, month, day] = fechaSolo.split('-');
+  return `${day}/${month}/${year}`;
 };
 
 const loadHoy = async () => {
@@ -461,23 +526,26 @@ const selectAsistenciaEdit = (asistencia: Asistencia) => {
   selectedAsistencia.value = asistencia;
   formEdit.horaMarcaje = new Date(asistencia.horaMarcaje).toTimeString().slice(0, 5);
   formEdit.minutosTardanza = asistencia.minutosTardanza;
+  formEdit.minutosSalidaAnticipada = asistencia.minutosSalidaAnticipada;  // ✅ AGREGAR
   formEdit.observacion = asistencia.observacion || '';
+
+  abrirModalEditar();
 };
 
 const handleCreate = async () => {
   const result = await asistenciasStore.createAsistencia(formCreate);
-  
+
   if (result.success) {
     const modal = Modal.getInstance(document.getElementById('modalCrear')!);
     modal?.hide();
-    
     // Reset form
     formCreate.funcionarioId = 0;
     formCreate.fecha = new Date().toISOString().split('T')[0];
     formCreate.horaMarcaje = new Date().toTimeString().slice(0, 5);
     formCreate.tipoMarcaje = 'INGRESO_MANANA' as any;
     formCreate.minutosTardanza = 0;
-    
+    formCreate.minutosSalidaAnticipada = 0;  // ✅ AGREGAR
+
     await loadHoy();
     alert('Marcaje registrado exitosamente');
   } else {
@@ -487,13 +555,13 @@ const handleCreate = async () => {
 
 const handleUpdate = async () => {
   if (!selectedAsistencia.value) return;
-  
+
   const result = await asistenciasStore.updateAsistencia(selectedAsistencia.value.id, formEdit);
-  
+
   if (result.success) {
     const modal = Modal.getInstance(document.getElementById('modalEditar')!);
     modal?.hide();
-    
+
     await loadHoy();
     alert('Marcaje actualizado exitosamente');
   } else {
@@ -505,9 +573,9 @@ const confirmDelete = async (asistencia: Asistencia) => {
   if (!confirm(`¿Está seguro de eliminar este marcaje?`)) {
     return;
   }
-  
+
   const result = await asistenciasStore.deleteAsistencia(asistencia.id);
-  
+
   if (result.success) {
     await loadHoy();
     alert('Marcaje eliminado exitosamente');

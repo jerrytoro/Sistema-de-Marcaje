@@ -60,6 +60,7 @@ export interface Asistencia {
   horaMarcaje: string;
   tipoMarcaje: TipoMarcaje;
   minutosTardanza: number;
+  minutosSalidaAnticipada: number;
   verificado: boolean;
   observacion?: string;
   createdAt: string;
@@ -88,7 +89,7 @@ export interface Reporte {
   mes: number;
   anio: number;
   archivoPdf: string;
-  generatedAt: string;
+  fechaGeneracion: string;
   createdAt: string;
   updatedAt: string;
   funcionario?: Funcionario;
@@ -137,6 +138,7 @@ export interface CreateAsistenciaDto {
   horaMarcaje: string;
   tipoMarcaje: TipoMarcaje;
   minutosTardanza?: number;
+  minutosSalidaAnticipada?: number;
   verificado?: boolean;
   observacion?: string;
 }
@@ -146,6 +148,7 @@ export interface UpdateAsistenciaDto {
   horaMarcaje?: string;
   tipoMarcaje?: TipoMarcaje;
   minutosTardanza?: number;
+  minutosSalidaAnticipada?: number;
   verificado?: boolean;
   observacion?: string;
 }

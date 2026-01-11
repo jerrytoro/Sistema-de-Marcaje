@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as express from 'express';
 
+process.env.TZ = 'America/La_Paz';
 /**
  * Función principal que inicializa la aplicación NestJS
  */

@@ -5,6 +5,7 @@ export declare class ReportesController {
     private readonly reportesService;
     constructor(reportesService: ReportesService);
     generarReporte(generarReporteDto: GenerarReporteDto): Promise<{
+        fechaGeneracion: string;
         funcionario: {
             nombre: string;
             apellido: string;
@@ -12,7 +13,6 @@ export declare class ReportesController {
             dependencia: string;
             id: number;
         };
-    } & {
         id: number;
         funcionarioId: number;
         mes: number;
@@ -24,9 +24,9 @@ export declare class ReportesController {
         totalPermisos: number;
         reporteGenerado: boolean;
         urlReportePdf: string | null;
-        fechaGeneracion: Date;
     }>;
-    findAll(): Promise<({
+    findAll(): Promise<{
+        fechaGeneracion: string;
         funcionario: {
             nombre: string;
             apellido: string;
@@ -34,7 +34,6 @@ export declare class ReportesController {
             dependencia: string;
             id: number;
         };
-    } & {
         id: number;
         funcionarioId: number;
         mes: number;
@@ -46,9 +45,9 @@ export declare class ReportesController {
         totalPermisos: number;
         reporteGenerado: boolean;
         urlReportePdf: string | null;
-        fechaGeneracion: Date;
-    })[]>;
-    findByFuncionario(id: number): Promise<({
+    }[]>;
+    findByFuncionario(id: number): Promise<{
+        fechaGeneracion: string;
         funcionario: {
             nombre: string;
             apellido: string;
@@ -56,7 +55,6 @@ export declare class ReportesController {
             dependencia: string;
             id: number;
         };
-    } & {
         id: number;
         funcionarioId: number;
         mes: number;
@@ -68,9 +66,9 @@ export declare class ReportesController {
         totalPermisos: number;
         reporteGenerado: boolean;
         urlReportePdf: string | null;
-        fechaGeneracion: Date;
-    })[]>;
+    }[]>;
     findOne(id: number): Promise<{
+        fechaGeneracion: string;
         funcionario: {
             nombre: string;
             apellido: string;
@@ -78,7 +76,6 @@ export declare class ReportesController {
             dependencia: string;
             id: number;
         };
-    } & {
         id: number;
         funcionarioId: number;
         mes: number;
@@ -90,10 +87,10 @@ export declare class ReportesController {
         totalPermisos: number;
         reporteGenerado: boolean;
         urlReportePdf: string | null;
-        fechaGeneracion: Date;
     }>;
     descargarPDF(id: number, res: Response): Promise<void>;
     regenerarReporte(id: number): Promise<{
+        fechaGeneracion: string;
         funcionario: {
             nombre: string;
             apellido: string;
@@ -101,7 +98,6 @@ export declare class ReportesController {
             dependencia: string;
             id: number;
         };
-    } & {
         id: number;
         funcionarioId: number;
         mes: number;
@@ -113,7 +109,6 @@ export declare class ReportesController {
         totalPermisos: number;
         reporteGenerado: boolean;
         urlReportePdf: string | null;
-        fechaGeneracion: Date;
     }>;
     remove(id: number): Promise<{
         message: string;

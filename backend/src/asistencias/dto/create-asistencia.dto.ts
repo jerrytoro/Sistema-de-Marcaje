@@ -1,11 +1,7 @@
 import { IsInt, IsNotEmpty, IsDateString, IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
 
-// Definir TipoMarcaje
 type TipoMarcaje = 'INGRESO_MANANA' | 'SALIDA_DESCANSO' | 'INGRESO_TARDE' | 'SALIDA_FINAL';
 
-/**
- * DTO para registrar una asistencia (marcaje individual)
- */
 export class CreateAsistenciaDto {
   @IsInt({ message: 'El ID del funcionario debe ser un número entero' })
   @IsNotEmpty({ message: 'El ID del funcionario es requerido' })
@@ -28,6 +24,10 @@ export class CreateAsistenciaDto {
   @IsInt()
   @IsOptional()
   minutosTardanza?: number;
+
+  @IsOptional()
+  @IsInt()
+  minutosSalidaAnticipada?: number;
 
   @IsBoolean()
   @IsOptional()

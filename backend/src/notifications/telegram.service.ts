@@ -233,7 +233,8 @@ Para volver a vincular, escanea el código QR desde tu perfil.
   }
 
   /**
-   * Enviar notificación de marcaje exitoso
+   * ✅ ACTUALIZADO: Enviar notificación de marcaje exitoso
+   * Ahora diferencia entre INGRESOS (tardanza) y SALIDAS (salida anticipada)
    */
   async notificarMarcajeExitoso(data: {
     chatId: string;
@@ -241,13 +242,27 @@ Para volver a vincular, escanea el código QR desde tu perfil.
     tipoMarcaje: string;
     hora: string;
     minutosTardanza: number;
+    minutosSalidaAnticipada?: number;  // ✅ NUEVO campo
   }) {
     if (!this.bot) return;
 
     const tipoEmoji = this.getTipoMarcajeEmoji(data.tipoMarcaje);
-    const tardanzaText = data.minutosTardanza > 0
-      ? `⏱️ Tardanza: ${data.minutosTardanza} minutos`
-      : '✅ A tiempo';
+    
+    // ✅ LÓGICA DIFERENCIADA: Ingresos vs Salidas
+    let estadoText = '';
+    
+    if (data.tipoMarcaje === 'INGRESO_MANANA' || data.tipoMarcaje === 'INGRESO_TARDE') {
+      // Para INGRESOS: Mostrar tardanza
+      estadoText = data.minutosTardanza > 0
+        ? `⏱️ Tardanza: ${data.minutosTardanza} minutos`
+        : '✅ A tiempo';
+    } else if (data.tipoMarcaje === 'SALIDA_DESCANSO' || data.tipoMarcaje === 'SALIDA_FINAL') {
+      // Para SALIDAS: Mostrar salida anticipada
+      const salidaAnt = data.minutosSalidaAnticipada || 0;
+      estadoText = salidaAnt > 0
+        ? `🔴 Salida anticipada: ${salidaAnt} minutos`
+        : '✅ Normal';
+    }
 
     const message = `
 ✅ *Marcaje Registrado*
@@ -255,7 +270,7 @@ Para volver a vincular, escanea el código QR desde tu perfil.
 👤 ${data.funcionario}
 ${tipoEmoji} *Tipo:* ${this.formatTipoMarcaje(data.tipoMarcaje)}
 🕐 *Hora:* ${data.hora}
-${tardanzaText}
+${estadoText}
 
 Todo correcto ✅
     `;
@@ -268,7 +283,8 @@ Todo correcto ✅
   }
 
   /**
-   * Enviar notificación de salida no registrada
+   * ✅ ACTUALIZADO: Enviar notificación de salida no registrada
+   * Cambio de 60 minutos a 30 minutos de espera
    */
   async notificarSalidaNoRegistrada(data: {
     chatId: string;
@@ -278,13 +294,13 @@ Todo correcto ✅
     if (!this.bot) return;
 
     const message = `
-⚠️ *Salida No Registrada*
+    ⚠️ *Recordatorio de Marcaje*
 
-👤 ${data.funcionario}
-📅 Fecha: ${data.fecha}
+    👤 ${data.funcionario}
+    📅 Fecha: ${data.fecha}
 
-No registraste tu salida del día de hoy.
-Por favor, contacta a RRHH.
+    Han pasado 30 minutos y no has registrado tu salida.
+    Por favor, registra tu marcaje.
     `;
 
     try {
@@ -307,12 +323,12 @@ Por favor, contacta a RRHH.
     const tipoEmoji = this.getTipoMarcajeEmoji(data.tipoMarcaje);
 
     const message = `
-⏰ *Recordatorio de Marcaje*
+    ⏰ *Recordatorio de Marcaje*
 
-👤 ${data.funcionario}
-${tipoEmoji} Marcaje pendiente: ${this.formatTipoMarcaje(data.tipoMarcaje)}
+    👤 ${data.funcionario}
+    ${tipoEmoji} Marcaje pendiente: ${this.formatTipoMarcaje(data.tipoMarcaje)}
 
-Por favor registra tu asistencia.
+    Por favor registra tu asistencia.
     `;
 
     try {
@@ -334,14 +350,14 @@ Por favor registra tu asistencia.
     if (!this.bot) return;
 
     const message = `
-🚨 *Alerta de Asistencia*
+    🚨 *Alerta de Asistencia*
 
-👤 ${data.funcionario}
-📊 Faltas en el mes: ${data.totalFaltas}
-📅 Mes: ${data.mes}
+    👤 ${data.funcionario}
+    📊 Faltas en el mes: ${data.totalFaltas}
+    📅 Mes: ${data.mes}
 
-Tienes 3 o más faltas este mes.
-Por favor, regulariza tu situación en RRHH.
+    Tienes 3 o más faltas este mes.
+    Por favor, regulariza tu situación en RRHH.
     `;
 
     try {

@@ -24,6 +24,11 @@ export class UpdateAsistenciaDto {
   @IsOptional()
   minutosTardanza?: number;
 
+  // ✅ AGREGAR ESTE CAMPO
+  @IsOptional()
+  @IsInt()
+  minutosSalidaAnticipada?: number;
+
   @IsBoolean()
   @IsOptional()
   verificado?: boolean;

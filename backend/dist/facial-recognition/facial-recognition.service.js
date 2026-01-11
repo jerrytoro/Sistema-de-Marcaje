@@ -145,22 +145,24 @@ let FacialRecognitionService = class FacialRecognitionService {
             console.log('✅ Rostro reconocido:', funcionario.nombre, funcionario.apellido);
             console.log('📊 Confianza:', confianza + '%');
             console.log('📝 Paso 4: Determinando tipo de marcaje...');
-            const tipoMarcaje = await this.determinarTipoMarcaje(funcionario.id);
+            const fechaMarcaje = new Date();
+            const tipoMarcaje = await this.determinarTipoMarcajePorVentana(fechaMarcaje);
             console.log('✅ Tipo de marcaje:', tipoMarcaje);
             console.log('📝 Paso 5: Registrando asistencia...');
-            const fechaMarcaje = new Date();
             const asistencia = await this.prisma.asistencia.create({
                 data: {
                     funcionarioId: funcionario.id,
                     fecha: fechaMarcaje,
                     horaMarcaje: fechaMarcaje,
-                    tipoMarcaje: tipoMarcaje,
+                    tipoMarcaje,
                     metodoMarcaje: 'FACIAL',
+                    minutosTardanza: 0,
+                    minutosSalidaAnticipada: 0,
                 },
             });
             console.log('✅ Asistencia creada con ID:', asistencia.id);
             console.log('📝 Paso 6: Calculando atraso...');
-            await this.calcularAtraso(asistencia.id);
+            await this.calcularTardanzaOSalidaAnticipada(asistencia.id, tipoMarcaje);
             console.log('✅ Atraso calculado');
             const asistenciaFinal = await this.prisma.asistencia.findUnique({
                 where: { id: asistencia.id },
@@ -175,11 +177,12 @@ let FacialRecognitionService = class FacialRecognitionService {
                         chatId: funcionario.telegramChatId,
                         funcionario: `${funcionario.nombre} ${funcionario.apellido}`,
                         tipoMarcaje: asistenciaFinal.tipoMarcaje,
-                        hora: asistenciaFinal.horaMarcaje.toLocaleTimeString('es-ES', {
+                        hora: asistenciaFinal.horaMarcaje.toLocaleTimeString('es-BO', {
                             hour: '2-digit',
                             minute: '2-digit',
                         }),
                         minutosTardanza: asistenciaFinal.minutosTardanza || 0,
+                        minutosSalidaAnticipada: asistencia.minutosSalidaAnticipada
                     });
                     console.log('✅ Notificación enviada a Telegram');
                 }
@@ -218,6 +221,43 @@ let FacialRecognitionService = class FacialRecognitionService {
             console.error('❌ Stack:', error.stack);
             console.error('❌ ==========================================\n');
             throw error;
+        }
+    }
+    async determinarTipoMarcajePorVentana(horaMarcaje) {
+        const configs = await this.prisma.configuracionHorario.findMany();
+        const hora = horaMarcaje.toTimeString().substring(0, 5);
+        for (const config of configs) {
+            if (config.horaInicioVentana && config.horaFinVentana) {
+                if (hora >= config.horaInicioVentana && hora <= config.horaFinVentana) {
+                    return config.tipoMarcaje;
+                }
+            }
+        }
+        throw new common_1.BadRequestException(`Hora ${hora} fuera de ventanas`);
+    }
+    async calcularTardanzaOSalidaAnticipada(id, tipo) {
+        const asist = await this.prisma.asistencia.findUnique({ where: { id } });
+        if (!asist)
+            return;
+        const config = await this.prisma.configuracionHorario.findUnique({ where: { tipoMarcaje: tipo } });
+        if (!config)
+            return;
+        const hMarcaje = asist.horaMarcaje.getHours() * 60 + asist.horaMarcaje.getMinutes();
+        const [h, m] = config.horaProgramada.split(':').map(Number);
+        const hEsperada = h * 60 + m;
+        if (tipo === 'INGRESO_MANANA' || tipo === 'INGRESO_TARDE') {
+            const dif = hMarcaje - hEsperada - config.toleranciaMinutos;
+            await this.prisma.asistencia.update({
+                where: { id },
+                data: { minutosTardanza: dif > 0 ? dif : 0, minutosSalidaAnticipada: 0 },
+            });
+        }
+        else {
+            const dif = hEsperada - hMarcaje;
+            await this.prisma.asistencia.update({
+                where: { id },
+                data: { minutosTardanza: 0, minutosSalidaAnticipada: dif > 0 ? dif : 0 },
+            });
         }
     }
     calcularDistanciaEuclidiana(desc1, desc2) {

@@ -17,49 +17,92 @@ let AsistenciasService = class AsistenciasService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    async determinarTipoMarcaje(horaMarcaje) {
+        const configuraciones = await this.prisma.configuracionHorario.findMany();
+        const horaString = horaMarcaje.toTimeString().substring(0, 5);
+        for (const config of configuraciones) {
+            if (!config.horaInicioVentana || !config.horaFinVentana) {
+                continue;
+            }
+            if (horaString >= config.horaInicioVentana && horaString <= config.horaFinVentana) {
+                return config.tipoMarcaje;
+            }
+        }
+        throw new common_1.BadRequestException(`La hora ${horaString} está fuera de las ventanas de marcaje permitidas. ` +
+            `Ventanas válidas: 06:30-09:00 (Ingreso Mañana), 11:00-13:00 (Salida Descanso), ` +
+            `13:00-15:00 (Ingreso Tarde), 17:00-21:00 (Salida Final)`);
+    }
+    calcularTardanza(horaMarcaje, configuracion) {
+        const horasMarcaje = horaMarcaje.getHours();
+        const minutosMarcaje = horaMarcaje.getMinutes();
+        const minutosTotalesMarcaje = horasMarcaje * 60 + minutosMarcaje;
+        const [horasEsperadas, minutosEsperados] = configuracion.horaProgramada
+            .split(':')
+            .map(Number);
+        const minutosTotalesEsperados = horasEsperadas * 60 + minutosEsperados;
+        const diferencia = minutosTotalesMarcaje - minutosTotalesEsperados - configuracion.toleranciaMinutos;
+        return diferencia > 0 ? diferencia : 0;
+    }
+    calcularSalidaAnticipada(horaMarcaje, configuracion) {
+        const horasMarcaje = horaMarcaje.getHours();
+        const minutosMarcaje = horaMarcaje.getMinutes();
+        const minutosTotalesMarcaje = horasMarcaje * 60 + minutosMarcaje;
+        const [horasEsperadas, minutosEsperados] = configuracion.horaProgramada
+            .split(':')
+            .map(Number);
+        const minutosTotalesEsperados = horasEsperadas * 60 + minutosEsperados;
+        const diferencia = minutosTotalesEsperados - minutosTotalesMarcaje;
+        return diferencia > 0 ? diferencia : 0;
+    }
     async create(createAsistenciaDto) {
-        const { funcionarioId, fecha, horaMarcaje, tipoMarcaje, minutosTardanza, verificado, observacion } = createAsistenciaDto;
-        const funcionario = await this.prisma.funcionario.findUnique({
-            where: { id: funcionarioId },
+        const { funcionarioId, fecha, horaMarcaje, tipoMarcaje } = createAsistenciaDto;
+        console.log('📥 Recibido del frontend:', { fecha, horaMarcaje, tipoMarcaje });
+        const [year, month, day] = fecha.split('-').map(Number);
+        const [hour, minute] = horaMarcaje.split(':').map(Number);
+        const horaMarcajeCompleta = new Date(year, month - 1, day, hour, minute, 0);
+        const fechaSolo = new Date(year, month - 1, day);
+        console.log('✅ Fechas parseadas:', {
+            fechaSolo,
+            horaMarcajeCompleta
         });
-        if (!funcionario) {
-            throw new common_1.NotFoundException(`Funcionario con ID ${funcionarioId} no encontrado`);
-        }
-        const fechaDate = new Date(fecha);
-        const existingMarcaje = await this.prisma.asistencia.findFirst({
-            where: {
-                funcionarioId,
-                fecha: fechaDate,
-                tipoMarcaje,
-            },
+        const config = await this.prisma.configuracionHorario.findUnique({
+            where: { tipoMarcaje },
         });
-        if (existingMarcaje) {
-            throw new common_1.BadRequestException(`Ya existe un marcaje de tipo ${tipoMarcaje} para el funcionario ${funcionario.nombre} ${funcionario.apellido} en la fecha ${fecha}`);
+        if (!config) {
+            throw new common_1.NotFoundException(`No existe configuración para ${tipoMarcaje}`);
         }
-        const [horas, minutos] = horaMarcaje.split(':').map(Number);
-        const horaMarcajeCompleta = new Date(fechaDate);
-        horaMarcajeCompleta.setHours(horas, minutos, 0, 0);
+        const hMarcaje = horaMarcajeCompleta.getHours() * 60 + horaMarcajeCompleta.getMinutes();
+        const [h, m] = config.horaProgramada.split(':').map(Number);
+        const hEsperada = h * 60 + m;
+        let minutosTardanza = 0;
+        let minutosSalidaAnticipada = 0;
+        if (tipoMarcaje === 'INGRESO_MANANA' || tipoMarcaje === 'INGRESO_TARDE') {
+            const diferencia = hMarcaje - hEsperada - config.toleranciaMinutos;
+            minutosTardanza = diferencia > 0 ? diferencia : 0;
+        }
+        else {
+            const diferencia = hEsperada - hMarcaje;
+            minutosSalidaAnticipada = diferencia > 0 ? diferencia : 0;
+        }
         const asistencia = await this.prisma.asistencia.create({
             data: {
                 funcionarioId,
-                fecha: fechaDate,
+                fecha: fechaSolo,
                 horaMarcaje: horaMarcajeCompleta,
                 tipoMarcaje,
-                minutosTardanza: minutosTardanza || 0,
-                verificado: verificado !== undefined ? verificado : true,
-                observacion: observacion || null,
+                metodoMarcaje: 'MANUAL',
+                minutosTardanza,
+                minutosSalidaAnticipada,
+                verificado: true,
             },
             include: {
-                funcionario: {
-                    select: {
-                        id: true,
-                        nombre: true,
-                        apellido: true,
-                        cargo: true,
-                        dependencia: true,
-                    },
-                },
+                funcionario: true,
             },
+        });
+        console.log('✅ Asistencia creada:', {
+            id: asistencia.id,
+            fecha: asistencia.fecha,
+            horaMarcaje: asistencia.horaMarcaje
         });
         return asistencia;
     }
@@ -243,17 +286,42 @@ let AsistenciasService = class AsistenciasService {
         if (updateAsistenciaDto.fecha) {
             dataToUpdate.fecha = new Date(updateAsistenciaDto.fecha);
         }
+        let horaMarcajeActualizada;
+        let tipoMarcajeActualizado;
         if (updateAsistenciaDto.horaMarcaje) {
             const [horas, minutos] = updateAsistenciaDto.horaMarcaje.split(':').map(Number);
-            const horaMarcajeCompleta = new Date(asistencia.fecha);
-            horaMarcajeCompleta.setHours(horas, minutos, 0, 0);
-            dataToUpdate.horaMarcaje = horaMarcajeCompleta;
+            const fechaBase = dataToUpdate.fecha || asistencia.fecha;
+            horaMarcajeActualizada = new Date(fechaBase);
+            horaMarcajeActualizada.setHours(horas, minutos, 0, 0);
+            dataToUpdate.horaMarcaje = horaMarcajeActualizada;
+            tipoMarcajeActualizado = await this.determinarTipoMarcaje(horaMarcajeActualizada);
+            dataToUpdate.tipoMarcaje = tipoMarcajeActualizado;
         }
         if (updateAsistenciaDto.tipoMarcaje !== undefined) {
             dataToUpdate.tipoMarcaje = updateAsistenciaDto.tipoMarcaje;
+            tipoMarcajeActualizado = updateAsistenciaDto.tipoMarcaje;
         }
-        if (updateAsistenciaDto.minutosTardanza !== undefined) {
-            dataToUpdate.minutosTardanza = updateAsistenciaDto.minutosTardanza;
+        if (horaMarcajeActualizada || tipoMarcajeActualizado) {
+            const horaParaCalcular = horaMarcajeActualizada || asistencia.horaMarcaje;
+            const tipoParaCalcular = tipoMarcajeActualizado || asistencia.tipoMarcaje;
+            const configuracion = await this.prisma.configuracionHorario.findUnique({
+                where: { tipoMarcaje: tipoParaCalcular },
+            });
+            if (configuracion) {
+                if (tipoParaCalcular === 'INGRESO_MANANA' || tipoParaCalcular === 'INGRESO_TARDE') {
+                    dataToUpdate.minutosTardanza = this.calcularTardanza(horaParaCalcular, configuracion);
+                    dataToUpdate.minutosSalidaAnticipada = 0;
+                }
+                else {
+                    dataToUpdate.minutosSalidaAnticipada = this.calcularSalidaAnticipada(horaParaCalcular, configuracion);
+                    dataToUpdate.minutosTardanza = 0;
+                }
+            }
+        }
+        else {
+            if (updateAsistenciaDto.minutosTardanza !== undefined) {
+                dataToUpdate.minutosTardanza = updateAsistenciaDto.minutosTardanza;
+            }
         }
         if (updateAsistenciaDto.verificado !== undefined) {
             dataToUpdate.verificado = updateAsistenciaDto.verificado;
@@ -322,11 +390,27 @@ let AsistenciasService = class AsistenciasService {
                 minutosTardanza: true,
             },
         });
+        const salidasAnticipadas = await this.prisma.asistencia.aggregate({
+            where: {
+                ...whereClause,
+                minutosSalidaAnticipada: {
+                    gt: 0,
+                },
+            },
+            _count: {
+                id: true,
+            },
+            _sum: {
+                minutosSalidaAnticipada: true,
+            },
+        });
         return {
             totalMarcajes,
             totalTardanzas: tardanzas._count.id,
             minutosTardanzaTotal: tardanzas._sum.minutosTardanza || 0,
             minutosTardanzaPromedio: Math.round(tardanzas._avg.minutosTardanza || 0),
+            totalSalidasAnticipadas: salidasAnticipadas._count.id,
+            minutosSalidaAnticipadaTotal: salidasAnticipadas._sum.minutosSalidaAnticipada || 0,
         };
     }
 };

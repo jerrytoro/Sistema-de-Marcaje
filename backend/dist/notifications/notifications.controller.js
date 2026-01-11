@@ -60,7 +60,7 @@ let NotificationsController = class NotificationsController {
             chatId,
             funcionario: `${funcionario.nombre} ${funcionario.apellido}`,
             tipoMarcaje: 'INGRESO_MANANA',
-            hora: new Date().toLocaleTimeString('es-ES', {
+            hora: new Date().toLocaleTimeString('es-BO', {
                 hour: '2-digit',
                 minute: '2-digit',
             }),

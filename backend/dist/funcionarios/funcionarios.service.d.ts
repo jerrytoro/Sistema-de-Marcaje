@@ -67,6 +67,7 @@ export declare class FuncionariosService {
             tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
             metodoMarcaje: string | null;
             minutosTardanza: number;
+            minutosSalidaAnticipada: number;
             verificado: boolean;
             observacion: string | null;
         }[];
@@ -199,6 +200,7 @@ export declare class FuncionariosService {
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
         metodoMarcaje: string | null;
         minutosTardanza: number;
+        minutosSalidaAnticipada: number;
         verificado: boolean;
         observacion: string | null;
     }[]>;

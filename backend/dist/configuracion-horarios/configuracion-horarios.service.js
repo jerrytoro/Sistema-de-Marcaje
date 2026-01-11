@@ -125,27 +125,56 @@ let ConfiguracionHorariosService = class ConfiguracionHorariosService {
                 mensaje: 'No hay horarios configurados',
             };
         }
-        const [h, m] = horaActual.split(':').map(Number);
-        const minutosActual = h * 60 + m;
+        console.log('🕐 Hora actual:', horaActual);
         for (const horario of horarios) {
-            const [hh, mm] = horario.horaProgramada.split(':').map(Number);
-            const minutosHorario = hh * 60 + mm;
-            if (minutosActual < minutosHorario + horario.toleranciaMinutos) {
-                return {
-                    tipoMarcaje: horario.tipoMarcaje,
-                    horaProgramada: horario.horaProgramada,
-                    toleranciaMinutos: horario.toleranciaMinutos,
-                    minutosRestantes: minutosHorario - minutosActual,
-                };
+            if (horario.horaInicioVentana && horario.horaFinVentana) {
+                if (horaActual >= horario.horaInicioVentana && horaActual <= horario.horaFinVentana) {
+                    console.log('✅ Dentro de ventana:', horario.tipoMarcaje);
+                    const [hFin, mFin] = horario.horaFinVentana.split(':').map(Number);
+                    const [hActual, mActual] = horaActual.split(':').map(Number);
+                    const minutosRestantes = (hFin * 60 + mFin) - (hActual * 60 + mActual);
+                    return {
+                        tipoMarcaje: horario.tipoMarcaje,
+                        horaProgramada: horario.horaProgramada,
+                        horaInicioVentana: horario.horaInicioVentana,
+                        horaFinVentana: horario.horaFinVentana,
+                        toleranciaMinutos: horario.toleranciaMinutos,
+                        minutosRestantes: minutosRestantes,
+                        mensaje: `Ventana activa hasta ${horario.horaFinVentana}`,
+                    };
+                }
             }
         }
+        console.log('⏭️ No estamos en ninguna ventana, buscando la próxima...');
+        for (const horario of horarios) {
+            if (horario.horaInicioVentana && horario.horaFinVentana) {
+                if (horaActual < horario.horaInicioVentana) {
+                    console.log('⏭️ Próxima ventana:', horario.tipoMarcaje);
+                    const [hInicio, mInicio] = horario.horaInicioVentana.split(':').map(Number);
+                    const [hActual, mActual] = horaActual.split(':').map(Number);
+                    const minutosHastaInicio = (hInicio * 60 + mInicio) - (hActual * 60 + mActual);
+                    return {
+                        tipoMarcaje: horario.tipoMarcaje,
+                        horaProgramada: horario.horaProgramada,
+                        horaInicioVentana: horario.horaInicioVentana,
+                        horaFinVentana: horario.horaFinVentana,
+                        toleranciaMinutos: horario.toleranciaMinutos,
+                        minutosRestantes: minutosHastaInicio,
+                        mensaje: `Se activará a las ${horario.horaInicioVentana}`,
+                    };
+                }
+            }
+        }
+        console.log('✅ Todas las ventanas completadas');
         const primerHorario = horarios[0];
         if (primerHorario) {
             return {
                 tipoMarcaje: primerHorario.tipoMarcaje,
                 horaProgramada: primerHorario.horaProgramada,
+                horaInicioVentana: primerHorario.horaInicioVentana,
+                horaFinVentana: primerHorario.horaFinVentana,
                 toleranciaMinutos: primerHorario.toleranciaMinutos,
-                mensaje: 'Todos los marcajes del día completados',
+                mensaje: 'Todos los marcajes del día completados. Próximo: mañana',
             };
         }
         return {

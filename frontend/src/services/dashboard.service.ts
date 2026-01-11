@@ -85,7 +85,7 @@ class DashboardService {
       const asistenciasPorDia = new Map<string, number>();
       
       asistencias.forEach((asistencia) => {
-        const fecha = new Date(asistencia.fecha).toLocaleDateString('es-ES');
+        const fecha = new Date(asistencia.fecha).toLocaleDateString('es-BO');
         asistenciasPorDia.set(
           fecha,
           (asistenciasPorDia.get(fecha) || 0) + 1

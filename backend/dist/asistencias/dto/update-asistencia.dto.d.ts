@@ -4,6 +4,7 @@ export declare class UpdateAsistenciaDto {
     horaMarcaje?: string;
     tipoMarcaje?: TipoMarcaje;
     minutosTardanza?: number;
+    minutosSalidaAnticipada?: number;
     verificado?: boolean;
     observacion?: string;
 }

@@ -17,6 +17,7 @@ class CreateAsistenciaDto {
     horaMarcaje;
     tipoMarcaje;
     minutosTardanza;
+    minutosSalidaAnticipada;
     verificado;
     observacion;
 }
@@ -48,6 +49,11 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], CreateAsistenciaDto.prototype, "minutosTardanza", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    __metadata("design:type", Number)
+], CreateAsistenciaDto.prototype, "minutosSalidaAnticipada", void 0);
 __decorate([
     (0, class_validator_1.IsBoolean)(),
     (0, class_validator_1.IsOptional)(),

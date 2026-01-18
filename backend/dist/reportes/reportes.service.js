@@ -18,6 +18,82 @@ let ReportesService = class ReportesService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    agruparMarcajesPorDia(marcajes) {
+        const diasMap = new Map();
+        marcajes.forEach(marcaje => {
+            const fecha = marcaje.fecha.toISOString().split('T')[0];
+            if (!diasMap.has(fecha)) {
+                diasMap.set(fecha, []);
+            }
+            diasMap.get(fecha).push(marcaje);
+        });
+        const diasTrabajados = [];
+        diasMap.forEach((marcajesDia, fecha) => {
+            const dia = {
+                fecha: this.formatearFecha(fecha),
+                totalTardanza: 0,
+                totalSalidaAnticipada: 0,
+                permisos: 0,
+                jornada: 0
+            };
+            let minutosTrabajados = 0;
+            let horaIngresoManana = null;
+            let horaSalidaFinal = null;
+            marcajesDia.forEach(marcaje => {
+                const hora = marcaje.horaMarcaje.toTimeString().substring(0, 5);
+                const tardanza = marcaje.minutosTardanza || 0;
+                const salidaAnticipada = marcaje.minutosSalidaAnticipada || 0;
+                switch (marcaje.tipoMarcaje) {
+                    case 'INGRESO_MANANA':
+                        dia.ingresoManana = { hora, tardanza };
+                        dia.totalTardanza += tardanza;
+                        horaIngresoManana = marcaje.horaMarcaje;
+                        break;
+                    case 'SALIDA_DESCANSO':
+                        dia.salidaDescanso = { hora, anticipada: salidaAnticipada };
+                        dia.totalSalidaAnticipada += salidaAnticipada;
+                        if (horaIngresoManana) {
+                            const diffMs = marcaje.horaMarcaje.getTime() - horaIngresoManana.getTime();
+                            minutosTrabajados += Math.floor(diffMs / 60000);
+                        }
+                        break;
+                    case 'INGRESO_TARDE':
+                        dia.ingresoTarde = { hora, tardanza };
+                        dia.totalTardanza += tardanza;
+                        horaIngresoManana = marcaje.horaMarcaje;
+                        break;
+                    case 'SALIDA_FINAL':
+                        dia.salidaFinal = { hora, anticipada: salidaAnticipada };
+                        dia.totalSalidaAnticipada += salidaAnticipada;
+                        horaSalidaFinal = marcaje.horaMarcaje;
+                        if (horaIngresoManana) {
+                            const diffMs = marcaje.horaMarcaje.getTime() - horaIngresoManana.getTime();
+                            minutosTrabajados += Math.floor(diffMs / 60000);
+                        }
+                        break;
+                }
+            });
+            dia.jornada = minutosTrabajados;
+            diasTrabajados.push(dia);
+        });
+        return diasTrabajados.sort((a, b) => a.fecha.localeCompare(b.fecha));
+    }
+    formatearFecha(fecha) {
+        const [anio, mes, dia] = fecha.split('-');
+        return `${dia}/${mes}`;
+    }
+    obtenerRangoPeriodo(anio, mes, marcajes) {
+        if (marcajes.length === 0) {
+            return { inicio: '01/01', fin: '01/01' };
+        }
+        const fechas = marcajes.map(m => m.fecha.toISOString().split('T')[0]);
+        const fechaMin = fechas[0];
+        const fechaMax = fechas[fechas.length - 1];
+        return {
+            inicio: this.formatearFecha(fechaMin),
+            fin: this.formatearFecha(fechaMax)
+        };
+    }
     async generarReporte(generarReporteDto) {
         const { funcionarioId, anio, mes } = generarReporteDto;
         const funcionario = await this.prisma.funcionario.findUnique({
@@ -48,13 +124,16 @@ let ReportesService = class ReportesService {
                     lte: fechaFin,
                 },
             },
-            orderBy: {
-                fecha: 'asc',
-            },
+            orderBy: [
+                { fecha: 'asc' },
+                { horaMarcaje: 'asc' },
+            ],
         });
         const diasUnicos = new Set(marcajes.map(m => m.fecha.toISOString().split('T')[0])).size;
         const totalMinutosTardanza = marcajes.reduce((sum, m) => sum + (m.minutosTardanza || 0), 0);
-        const totalMinutosTrabajados = diasUnicos * 480;
+        const totalMinutosSalidaAnticipada = marcajes.reduce((sum, m) => sum + (m.minutosSalidaAnticipada || 0), 0);
+        const diasTrabajados = this.agruparMarcajesPorDia(marcajes);
+        const totalMinutosTrabajados = diasTrabajados.reduce((sum, dia) => sum + dia.jornada, 0);
         const reporte = await this.prisma.resumenMensual.create({
             data: {
                 funcionarioId,
@@ -63,6 +142,7 @@ let ReportesService = class ReportesService {
                 totalDiasTrabajados: diasUnicos,
                 totalMinutosTardanza,
                 totalMinutosTrabajados,
+                totalMinutosSalidaAnticipada,
                 totalAusencias: 0,
                 totalPermisos: 0,
                 reporteGenerado: true,
@@ -179,32 +259,39 @@ let ReportesService = class ReportesService {
                 { horaMarcaje: 'asc' },
             ],
         });
-        const datosReporte = {
-            funcionario: {
-                nombre: reporte.funcionario.nombre,
-                apellido: reporte.funcionario.apellido,
-                cargo: reporte.funcionario.cargo,
-                dependencia: reporte.funcionario.dependencia,
-            },
-            periodo: {
-                mes: pdf_generator_1.PDFGenerator.obtenerNombreMes(reporte.mes),
-                anio: reporte.anio,
-            },
-            resumen: {
-                totalDiasTrabajados: reporte.totalDiasTrabajados,
-                totalMinutosTardanza: reporte.totalMinutosTardanza,
-                totalMinutosTrabajados: reporte.totalMinutosTrabajados,
-                totalAusencias: reporte.totalAusencias,
-                totalPermisos: reporte.totalPermisos,
-            },
-            marcajes: marcajes.map(m => ({
-                fecha: m.fecha.toISOString().split('T')[0],
-                tipoMarcaje: m.tipoMarcaje,
-                horaMarcaje: m.horaMarcaje.toTimeString().substring(0, 5),
-                minutosTardanza: m.minutosTardanza || 0,
-            })),
+        const configuracionHorarios = await this.prisma.configuracionHorario.findMany({
+            orderBy: { tipoMarcaje: 'asc' }
+        });
+        const horariosMap = configuracionHorarios.reduce((acc, config) => {
+            acc[config.tipoMarcaje] = config;
+            return acc;
+        }, {});
+        const horarios = {
+            ingresoManana: horariosMap['INGRESO_MANANA']?.horaProgramada || '08:00',
+            salidaDescanso: horariosMap['SALIDA_DESCANSO']?.horaProgramada || '12:00',
+            ingresoTarde: horariosMap['INGRESO_TARDE']?.horaProgramada || '14:00',
+            salidaFinal: horariosMap['SALIDA_FINAL']?.horaProgramada || '18:00',
+            toleranciaIngresoManana: horariosMap['INGRESO_MANANA']?.toleranciaMinutos || 0,
+            toleranciaIngresoTarde: horariosMap['INGRESO_TARDE']?.toleranciaMinutos || 0
         };
-        await pdf_generator_1.PDFGenerator.generarReporteMensual(datosReporte, res);
+        const datosProcessados = pdf_generator_1.PDFGenerator.procesarMarcajesConLogicaCorrecta(marcajes, horarios);
+        const rangoPeriodo = this.obtenerRangoPeriodo(reporte.anio, reporte.mes, marcajes);
+        await pdf_generator_1.PDFGenerator.generarPDFDesdeReporte({
+            nombre: reporte.funcionario.nombre,
+            apellido: reporte.funcionario.apellido,
+            cargo: reporte.funcionario.cargo,
+            dependencia: reporte.funcionario.dependencia,
+        }, {
+            mes: this.obtenerNombreMes(reporte.mes),
+            anio: reporte.anio,
+            fechaInicio: rangoPeriodo.inicio,
+            fechaFin: rangoPeriodo.fin,
+        }, {
+            totalDiasTrabajados: datosProcessados.diasUnicos,
+            totalMinutosTardanza: datosProcessados.totalTardanza,
+            totalMinutosTrabajados: datosProcessados.totalJornada,
+            totalSalidaAnticipada: datosProcessados.totalSalidaAnticipada,
+        }, datosProcessados.diasTrabajados, res);
     }
     async regenerarReporte(id) {
         const reporteExistente = await this.findOne(id);
@@ -218,16 +305,23 @@ let ReportesService = class ReportesService {
                     lte: fechaFin,
                 },
             },
+            orderBy: [
+                { fecha: 'asc' },
+                { horaMarcaje: 'asc' },
+            ],
         });
         const diasUnicos = new Set(marcajes.map(m => m.fecha.toISOString().split('T')[0])).size;
         const totalMinutosTardanza = marcajes.reduce((sum, m) => sum + (m.minutosTardanza || 0), 0);
-        const totalMinutosTrabajados = diasUnicos * 480;
+        const totalMinutosSalidaAnticipada = marcajes.reduce((sum, m) => sum + (m.minutosSalidaAnticipada || 0), 0);
+        const diasTrabajados = this.agruparMarcajesPorDia(marcajes);
+        const totalMinutosTrabajados = diasTrabajados.reduce((sum, dia) => sum + dia.jornada, 0);
         const reporteActualizado = await this.prisma.resumenMensual.update({
             where: { id },
             data: {
                 totalDiasTrabajados: diasUnicos,
                 totalMinutosTardanza,
                 totalMinutosTrabajados,
+                totalMinutosSalidaAnticipada,
                 fechaGeneracion: new Date(),
             },
             include: {
@@ -255,6 +349,13 @@ let ReportesService = class ReportesService {
         return {
             message: `Reporte del mes ${reporte.mes}/${reporte.anio} eliminado exitosamente`,
         };
+    }
+    obtenerNombreMes(mes) {
+        const meses = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+        ];
+        return meses[mes - 1] || 'Desconocido';
     }
 };
 exports.ReportesService = ReportesService;

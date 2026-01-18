@@ -148,6 +148,7 @@ model ResumenMensual {
   mes                     Int
   totalDiasTrabajados     Int       @default(0) @map("total_dias_trabajados")
   totalMinutosTardanza    Int       @default(0) @map("total_minutos_tardanza")
+  totalMinutosSalidaAnticipada   Int           @default(0) @map("total_minutos_salida_anticipada")
   totalMinutosTrabajados  Int       @default(0) @map("total_minutos_trabajados")
   totalAusencias          Int       @default(0) @map("total_ausencias")
   totalPermisos           Int       @default(0) @map("total_permisos")

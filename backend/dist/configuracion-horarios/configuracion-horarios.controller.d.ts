@@ -6,26 +6,26 @@ export declare class ConfiguracionHorariosController {
     constructor(configuracionHorariosService: ConfiguracionHorariosService);
     findAll(): Promise<{
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
         horaProgramada: string;
         toleranciaMinutos: number;
         horaInicioVentana: string | null;
         horaFinVentana: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }[]>;
     validar(): Promise<{
         valido: boolean;
         errores: string[];
         horarios: {
             id: number;
+            createdAt: Date;
+            updatedAt: Date;
             tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
             horaProgramada: string;
             toleranciaMinutos: number;
             horaInicioVentana: string | null;
             horaFinVentana: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         }[];
     }>;
     getSiguienteMarcaje(): Promise<{
@@ -55,13 +55,13 @@ export declare class ConfiguracionHorariosController {
     }>;
     findOne(tipoMarcaje: TipoMarcaje): Promise<{
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
         horaProgramada: string;
         toleranciaMinutos: number;
         horaInicioVentana: string | null;
         horaFinVentana: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     updateAll(updateAllHorariosDto: UpdateAllHorariosDto): Promise<{
         message: string;
@@ -69,25 +69,25 @@ export declare class ConfiguracionHorariosController {
     }>;
     update(tipoMarcaje: TipoMarcaje, updateHorarioDto: UpdateHorarioDto): Promise<{
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
         horaProgramada: string;
         toleranciaMinutos: number;
         horaInicioVentana: string | null;
         horaFinVentana: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     reset(): Promise<{
         message: string;
         horarios: {
             id: number;
+            createdAt: Date;
+            updatedAt: Date;
             tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
             horaProgramada: string;
             toleranciaMinutos: number;
             horaInicioVentana: string | null;
             horaFinVentana: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         }[];
     }>;
     verificarConflictos(tipoMarcaje: TipoMarcaje, hora: string): Promise<{

@@ -9,177 +9,177 @@ export declare class AsistenciasService {
     private calcularSalidaAnticipada;
     create(createAsistenciaDto: CreateAsistenciaDto): Promise<{
         funcionario: {
-            id: number;
-            createdAt: Date;
-            updatedAt: Date;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
             estado: boolean;
+            createdAt: Date;
+            updatedAt: Date;
             usuarioId: number;
             telegramChatId: string | null;
             facialDataRegistered: boolean;
         };
     } & {
+        id: number;
+        createdAt: Date;
         fecha: Date;
+        funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         minutosSalidaAnticipada: number;
         verificado: boolean;
         observacion: string | null;
-        id: number;
-        createdAt: Date;
-        funcionarioId: number;
-        metodoMarcaje: string | null;
     }>;
     findAll(limit?: number, offset?: number): Promise<({
         funcionario: {
-            id: number;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
         };
     } & {
+        id: number;
+        createdAt: Date;
         fecha: Date;
+        funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         minutosSalidaAnticipada: number;
         verificado: boolean;
         observacion: string | null;
-        id: number;
-        createdAt: Date;
-        funcionarioId: number;
-        metodoMarcaje: string | null;
     })[]>;
     findOne(id: number): Promise<{
         funcionario: {
-            id: number;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
         };
     } & {
+        id: number;
+        createdAt: Date;
         fecha: Date;
+        funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         minutosSalidaAnticipada: number;
         verificado: boolean;
         observacion: string | null;
-        id: number;
-        createdAt: Date;
-        funcionarioId: number;
-        metodoMarcaje: string | null;
     }>;
     findByFuncionario(funcionarioId: number, mes?: number, anio?: number): Promise<({
         funcionario: {
-            id: number;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
         };
     } & {
+        id: number;
+        createdAt: Date;
         fecha: Date;
+        funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         minutosSalidaAnticipada: number;
         verificado: boolean;
         observacion: string | null;
-        id: number;
-        createdAt: Date;
-        funcionarioId: number;
-        metodoMarcaje: string | null;
     })[]>;
     findToday(): Promise<({
         funcionario: {
-            id: number;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
         };
     } & {
+        id: number;
+        createdAt: Date;
         fecha: Date;
+        funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         minutosSalidaAnticipada: number;
         verificado: boolean;
         observacion: string | null;
-        id: number;
-        createdAt: Date;
-        funcionarioId: number;
-        metodoMarcaje: string | null;
     })[]>;
     findByDate(fecha: string): Promise<({
         funcionario: {
-            id: number;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
         };
     } & {
+        id: number;
+        createdAt: Date;
         fecha: Date;
+        funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         minutosSalidaAnticipada: number;
         verificado: boolean;
         observacion: string | null;
-        id: number;
-        createdAt: Date;
-        funcionarioId: number;
-        metodoMarcaje: string | null;
     })[]>;
     findByMonth(mes: number, anio: number): Promise<({
         funcionario: {
-            id: number;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
         };
     } & {
+        id: number;
+        createdAt: Date;
         fecha: Date;
+        funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         minutosSalidaAnticipada: number;
         verificado: boolean;
         observacion: string | null;
-        id: number;
-        createdAt: Date;
-        funcionarioId: number;
-        metodoMarcaje: string | null;
     })[]>;
     update(id: number, updateAsistenciaDto: UpdateAsistenciaDto): Promise<{
         funcionario: {
-            id: number;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
         };
     } & {
+        id: number;
+        createdAt: Date;
         fecha: Date;
+        funcionarioId: number;
         horaMarcaje: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
+        metodoMarcaje: string | null;
         minutosTardanza: number;
         minutosSalidaAnticipada: number;
         verificado: boolean;
         observacion: string | null;
-        id: number;
-        createdAt: Date;
-        funcionarioId: number;
-        metodoMarcaje: string | null;
     }>;
     remove(id: number): Promise<{
         message: string;

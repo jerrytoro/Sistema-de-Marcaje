@@ -6,33 +6,33 @@ export declare class ConfiguracionHorariosService {
     constructor(prisma: PrismaService);
     findAll(): Promise<{
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
         horaProgramada: string;
         toleranciaMinutos: number;
         horaInicioVentana: string | null;
         horaFinVentana: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }[]>;
     findOne(tipoMarcaje: TipoMarcaje): Promise<{
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
         horaProgramada: string;
         toleranciaMinutos: number;
         horaInicioVentana: string | null;
         horaFinVentana: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     update(tipoMarcaje: TipoMarcaje, updateHorarioDto: UpdateHorarioDto): Promise<{
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
         horaProgramada: string;
         toleranciaMinutos: number;
         horaInicioVentana: string | null;
         horaFinVentana: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     updateAll(updateAllHorariosDto: UpdateAllHorariosDto): Promise<{
         message: string;
@@ -42,13 +42,13 @@ export declare class ConfiguracionHorariosService {
         message: string;
         horarios: {
             id: number;
+            createdAt: Date;
+            updatedAt: Date;
             tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
             horaProgramada: string;
             toleranciaMinutos: number;
             horaInicioVentana: string | null;
             horaFinVentana: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         }[];
     }>;
     verificarConflictos(tipoMarcaje: TipoMarcaje, horaProgramada: string): Promise<{
@@ -86,13 +86,13 @@ export declare class ConfiguracionHorariosService {
         errores: string[];
         horarios: {
             id: number;
+            createdAt: Date;
+            updatedAt: Date;
             tipoMarcaje: import(".prisma/client").$Enums.TipoMarcaje;
             horaProgramada: string;
             toleranciaMinutos: number;
             horaInicioVentana: string | null;
             horaFinVentana: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         }[];
     }>;
 }

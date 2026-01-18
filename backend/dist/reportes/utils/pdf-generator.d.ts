@@ -7,26 +7,50 @@ interface DatosReporte {
         dependencia: string;
     };
     periodo: {
+        fechaInicio: string;
+        fechaFin: string;
         mes: string;
         anio: number;
     };
     resumen: {
-        totalDiasTrabajados: number;
-        totalMinutosTardanza: number;
-        totalMinutosTrabajados: number;
-        totalAusencias: number;
-        totalPermisos: number;
+        diasTrabajados: number;
+        tiempoTrabajado: string;
+        tardanzaTotal: string;
+        salidaAnticipadaTotal: string;
     };
-    marcajes: Array<{
+    asistenciasPorDia: Array<{
         fecha: string;
-        tipoMarcaje: string;
-        horaMarcaje: string;
-        minutosTardanza: number;
+        ingresoManana: string | null;
+        salidaDescanso: string | null;
+        ingresoTarde: string | null;
+        salidaFinal: string | null;
+        tardanza: string;
+        salidaAnticipada: string;
+        permisos: string;
+        jornada: string;
+        cantidadMarcajes: number;
     }>;
 }
 export declare class PDFGenerator {
-    static generarReporteMensual(datos: DatosReporte, res: Response): Promise<void>;
-    private static formatTipoMarcaje;
+    static generarReporteMensual(datosReporte: DatosReporte, res: Response): Promise<void>;
+    static generarPDFDesdeReporte(funcionario: any, periodo: {
+        mes: string;
+        anio: number;
+        fechaInicio: string;
+        fechaFin: string;
+    }, resumen: any, diasTrabajados: any[], res: Response): Promise<void>;
+    static procesarMarcajesConLogicaCorrecta(marcajes: any[], horarios: any): {
+        diasTrabajados: any[];
+        totalTardanza: number;
+        totalSalidaAnticipada: number;
+        totalJornada: number;
+        diasUnicos: number;
+    };
+    private static generarContenido;
+    private static dibujarTabla;
+    private static convertirHoraAMinutos;
+    private static formatearFechaCorta;
+    private static formatearTiempo;
     static obtenerNombreMes(mes: number): string;
 }
 export {};

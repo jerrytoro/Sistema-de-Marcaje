@@ -103,10 +103,10 @@
       </router-link>
 
       <!-- Configuración -->
-      <router-link to="/configuracion" class="sidebar-nav-item" active-class="active">
+      <!-- <router-link to="/configuracion" class="sidebar-nav-item" active-class="active">
         <i class="bi bi-gear sidebar-nav-icon"></i>
         <span>Configuración</span>
-      </router-link>
+      </router-link> -->
     </nav>
 
     <!-- Footer -->

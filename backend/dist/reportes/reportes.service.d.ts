@@ -10,14 +10,16 @@ export declare class ReportesService {
     generarReporte(generarReporteDto: GenerarReporteDto): Promise<{
         fechaGeneracion: string;
         funcionario: {
-            id: number;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
         };
-        anio: number;
+        id: number;
+        funcionarioId: number;
         mes: number;
+        anio: number;
         totalDiasTrabajados: number;
         totalMinutosTardanza: number;
         totalMinutosSalidaAnticipada: number;
@@ -26,20 +28,20 @@ export declare class ReportesService {
         totalPermisos: number;
         reporteGenerado: boolean;
         urlReportePdf: string | null;
-        id: number;
-        funcionarioId: number;
     }>;
     findAll(): Promise<{
         fechaGeneracion: string;
         funcionario: {
-            id: number;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
         };
-        anio: number;
+        id: number;
+        funcionarioId: number;
         mes: number;
+        anio: number;
         totalDiasTrabajados: number;
         totalMinutosTardanza: number;
         totalMinutosSalidaAnticipada: number;
@@ -48,20 +50,20 @@ export declare class ReportesService {
         totalPermisos: number;
         reporteGenerado: boolean;
         urlReportePdf: string | null;
-        id: number;
-        funcionarioId: number;
     }[]>;
     findOne(id: number): Promise<{
         fechaGeneracion: string;
         funcionario: {
-            id: number;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
         };
-        anio: number;
+        id: number;
+        funcionarioId: number;
         mes: number;
+        anio: number;
         totalDiasTrabajados: number;
         totalMinutosTardanza: number;
         totalMinutosSalidaAnticipada: number;
@@ -70,20 +72,20 @@ export declare class ReportesService {
         totalPermisos: number;
         reporteGenerado: boolean;
         urlReportePdf: string | null;
-        id: number;
-        funcionarioId: number;
     }>;
     findByFuncionario(funcionarioId: number): Promise<{
         fechaGeneracion: string;
         funcionario: {
-            id: number;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
         };
-        anio: number;
+        id: number;
+        funcionarioId: number;
         mes: number;
+        anio: number;
         totalDiasTrabajados: number;
         totalMinutosTardanza: number;
         totalMinutosSalidaAnticipada: number;
@@ -92,21 +94,21 @@ export declare class ReportesService {
         totalPermisos: number;
         reporteGenerado: boolean;
         urlReportePdf: string | null;
-        id: number;
-        funcionarioId: number;
     }[]>;
     descargarPDF(id: number, res: Response): Promise<void>;
     regenerarReporte(id: number): Promise<{
         fechaGeneracion: string;
         funcionario: {
-            id: number;
             nombre: string;
             apellido: string;
             cargo: string;
             dependencia: string;
+            id: number;
         };
-        anio: number;
+        id: number;
+        funcionarioId: number;
         mes: number;
+        anio: number;
         totalDiasTrabajados: number;
         totalMinutosTardanza: number;
         totalMinutosSalidaAnticipada: number;
@@ -115,8 +117,6 @@ export declare class ReportesService {
         totalPermisos: number;
         reporteGenerado: boolean;
         urlReportePdf: string | null;
-        id: number;
-        funcionarioId: number;
     }>;
     remove(id: number): Promise<{
         message: string;

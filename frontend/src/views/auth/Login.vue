@@ -83,7 +83,7 @@
           </div>
 
           <!-- Credenciales de prueba -->
-          <div class="card mt-3 border-0 bg-light">
+          <!-- <div class="card mt-3 border-0 bg-light">
             <div class="card-body p-3">
               <p class="mb-2 text-muted small">
                 <i class="bi bi-key-fill me-1"></i>
@@ -93,7 +93,7 @@
                 <li><strong>Admin:</strong> admin / admin123</li>
               </ul>
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>

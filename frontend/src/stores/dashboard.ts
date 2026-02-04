@@ -10,6 +10,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     totalUsuarios: 0,
     asistenciasHoy: 0,
     tardanzasHoy: 0,
+    salidasAnticipadasHoy: 0,
   });
 
   const asistenciasHoy = ref<Asistencia[]>([]);

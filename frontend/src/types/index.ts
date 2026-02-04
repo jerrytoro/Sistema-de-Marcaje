@@ -175,6 +175,7 @@ export interface EstadisticasDashboard {
   totalUsuarios: number;
   asistenciasHoy: number;
   tardanzasHoy: number;
+  salidasAnticipadasHoy: number;
 }
 
 // ========================================

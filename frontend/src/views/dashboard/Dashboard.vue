@@ -1,10 +1,10 @@
 <template>
   <div class="main-wrapper">
     <Sidebar :isOpen="sidebarOpen" @close="sidebarOpen = false" />
-    
+
     <div class="main-content">
       <Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
-      
+
       <div class="content-area">
         <div class="container-fluid">
           <!-- Header -->
@@ -16,11 +16,7 @@
               </h1>
               <p class="text-muted mb-0">Bienvenido, {{ authStore.userName }}</p>
             </div>
-            <button 
-              class="btn btn-primary"
-              @click="refreshData"
-              :disabled="dashboardStore.loading"
-            >
+            <button class="btn btn-primary" @click="refreshData" :disabled="dashboardStore.loading">
               <i class="bi bi-arrow-clockwise me-2"></i>
               Actualizar
             </button>
@@ -29,44 +25,29 @@
           <!-- Stats Cards -->
           <div class="row g-4 mb-4">
             <div class="col-12 col-sm-6 col-xl-3">
-              <StatCard
-                title="Total Funcionarios"
-                :value="dashboardStore.estadisticas.totalFuncionarios"
-                icon="people-fill"
-                color="primary"
-                :loading="dashboardStore.loading"
-              />
+              <StatCard title="Total Funcionarios" :value="dashboardStore.estadisticas.totalFuncionarios"
+                icon="people-fill" color="primary" :loading="dashboardStore.loading" />
             </div>
 
             <div class="col-12 col-sm-6 col-xl-3">
-              <StatCard
-                title="Asistencias Hoy"
-                :value="dashboardStore.estadisticas.asistenciasHoy"
-                icon="clipboard-check"
-                color="success"
-                :loading="dashboardStore.loading"
-              />
+              <StatCard title="Total Marcajes Hoy" :value="dashboardStore.estadisticas.asistenciasHoy"
+                icon="clipboard-check" color="success" :loading="dashboardStore.loading" />
             </div>
 
             <div class="col-12 col-sm-6 col-xl-3">
-              <StatCard
-                title="Tardanzas Hoy"
-                :value="dashboardStore.estadisticas.tardanzasHoy"
-                icon="exclamation-triangle-fill"
-                color="warning"
-                :loading="dashboardStore.loading"
-              />
+              <StatCard title="Ingreso Tarde Hoy" :value="dashboardStore.estadisticas.tardanzasHoy"
+                icon="exclamation-triangle-fill" color="warning" :loading="dashboardStore.loading" />
             </div>
 
-            <div class="col-12 col-sm-6 col-xl-3" v-if="authStore.isAdmin()">
-              <StatCard
-                title="Total Usuarios"
-                :value="dashboardStore.estadisticas.totalUsuarios"
-                icon="person-badge-fill"
-                color="info"
-                :loading="dashboardStore.loading"
-              />
+            <div class="col-12 col-sm-6 col-xl-3">
+              <StatCard title="Salida Temprano Hoy" :value="dashboardStore.estadisticas.salidasAnticipadasHoy"
+                icon="exclamation-circle-fill" color="danger" :loading="dashboardStore.loading" />
             </div>
+
+            <!-- <div class="col-12 col-sm-6 col-xl-3" v-if="authStore.isAdmin()">
+              <StatCard title="Total Usuarios" :value="dashboardStore.estadisticas.totalUsuarios"
+                icon="person-badge-fill" color="info" :loading="dashboardStore.loading" />
+            </div> -->
           </div>
 
           <!-- Charts and Tables Row -->
@@ -99,7 +80,8 @@
                           <th>Funcionario</th>
                           <th>Tipo Marcaje</th>
                           <th>Hora</th>
-                          <th>Tardanza</th>
+                          <th>Ingreso Tarde</th>
+                          <th>Salida Anticipada</th>
                           <th>Estado</th>
                         </tr>
                       </thead>
@@ -107,8 +89,8 @@
                         <tr v-for="asistencia in dashboardStore.asistenciasHoy.slice(0, 10)" :key="asistencia.id">
                           <td>
                             <div class="d-flex align-items-center">
-                              <div class="avatar bg-primary bg-opacity-10 text-primary rounded-circle me-2" 
-                                   style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                              <div class="avatar bg-primary bg-opacity-10 text-primary rounded-circle me-2"
+                                style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
                                 <i class="bi bi-person-fill"></i>
                               </div>
                               <div>
@@ -120,18 +102,40 @@
                             </div>
                           </td>
                           <td>
-                            <span class="badge bg-info">
+                            <span class="badge" :class="getTipoBadgeClass(asistencia.tipoMarcaje)">
                               {{ formatTipoMarcaje(asistencia.tipoMarcaje) }}
                             </span>
                           </td>
                           <td>{{ formatHora(asistencia.horaMarcaje) }}</td>
                           <td>
-                            <span v-if="asistencia.minutosTardanza > 0" class="text-warning fw-semibold">
+                            <span
+                              v-if="(asistencia.tipoMarcaje === 'INGRESO_MANANA' || asistencia.tipoMarcaje === 'INGRESO_TARDE') && asistencia.minutosTardanza > 0"
+                              class="text-warning fw-semibold">
+                              <i class="bi bi-clock-history me-1"></i>
                               {{ asistencia.minutosTardanza }} min
                             </span>
-                            <span v-else class="text-success">
-                              <i class="bi bi-check-circle-fill"></i> A tiempo
+                            <span
+                              v-else-if="asistencia.tipoMarcaje === 'INGRESO_MANANA' || asistencia.tipoMarcaje === 'INGRESO_TARDE'"
+                              class="text-success">
+                              <i class="bi bi-check-circle-fill me-1"></i>
+                              A tiempo
                             </span>
+                            <span v-else class="text-muted">-</span>
+                          </td>
+                          <td>
+                            <span
+                              v-if="(asistencia.tipoMarcaje === 'SALIDA_DESCANSO' || asistencia.tipoMarcaje === 'SALIDA_FINAL') && asistencia.minutosSalidaAnticipada > 0"
+                              class="text-danger">
+                              <i class="bi bi-exclamation-circle-fill me-1"></i>
+                              {{ asistencia.minutosSalidaAnticipada }} min
+                            </span>
+                            <span
+                              v-else-if="asistencia.tipoMarcaje === 'SALIDA_DESCANSO' || asistencia.tipoMarcaje === 'SALIDA_FINAL'"
+                              class="text-success">
+                              <i class="bi bi-check-circle-fill me-1"></i>
+                              Normal
+                            </span>
+                            <span v-else class="text-muted">-</span>
                           </td>
                           <td>
                             <span v-if="asistencia.verificado" class="badge bg-success">
@@ -168,37 +172,24 @@
                 </div>
                 <div class="card-body">
                   <div class="d-grid gap-2">
-                    <router-link
-                      v-if="authStore.isAdmin() || authStore.isRRHH()"
-                      to="/asistencias"
-                      class="btn btn-outline-primary text-start"
-                    >
+                    <router-link v-if="authStore.isAdmin() || authStore.isRRHH()" to="/asistencias"
+                      class="btn btn-outline-primary text-start">
                       <i class="bi bi-plus-circle me-2"></i>
                       Registrar Asistencia
                     </router-link>
 
-                    <router-link
-                      v-if="authStore.isAdmin() || authStore.isRRHH()"
-                      to="/reportes"
-                      class="btn btn-outline-success text-start"
-                    >
+                    <router-link v-if="authStore.isAdmin() || authStore.isRRHH()" to="/reportes"
+                      class="btn btn-outline-success text-start">
                       <i class="bi bi-file-earmark-pdf me-2"></i>
                       Generar Reporte
                     </router-link>
 
-                    <router-link
-                      v-if="authStore.isAdmin()"
-                      to="/funcionarios"
-                      class="btn btn-outline-info text-start"
-                    >
+                    <router-link v-if="authStore.isAdmin()" to="/funcionarios" class="btn btn-outline-info text-start">
                       <i class="bi bi-person-plus me-2"></i>
                       Nuevo Funcionario
                     </router-link>
 
-                    <router-link
-                      to="/perfil"
-                      class="btn btn-outline-secondary text-start"
-                    >
+                    <router-link to="/perfil" class="btn btn-outline-secondary text-start">
                       <i class="bi bi-person-circle me-2"></i>
                       Mi Perfil
                     </router-link>
@@ -270,6 +261,16 @@ const updateTime = () => {
   currentTime.value = new Date().toLocaleTimeString('es-BO');
 };
 
+const getTipoBadgeClass = (tipo: string) => {
+  const classes: { [key: string]: string } = {
+    INGRESO_MANANA: 'bg-success',
+    SALIDA_DESCANSO: 'bg-warning text-dark',
+    INGRESO_TARDE: 'bg-info',
+    SALIDA_FINAL: 'bg-danger',
+  };
+  return classes[tipo] || 'bg-secondary';
+};
+
 const formatTipoMarcaje = (tipo: string) => {
   const tipos: { [key: string]: string } = {
     INGRESO_MANANA: 'Ingreso Mañana',
@@ -293,15 +294,15 @@ const refreshData = async () => {
 
 onMounted(async () => {
   await dashboardStore.refreshDashboard();
-  
+
   // Actualizar reloj cada segundo
   updateTime();
   setInterval(updateTime, 1000);
 
-  // Actualizar estadísticas cada 30 segundos
+  // Actualizar estadísticas cada 5 minutos
   setInterval(() => {
     dashboardStore.refreshDashboard();
-  }, 30000);
+  }, 300000);
 });
 </script>
 

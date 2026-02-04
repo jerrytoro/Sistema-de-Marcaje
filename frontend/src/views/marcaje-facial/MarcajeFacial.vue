@@ -172,7 +172,7 @@
                 <i class="bi bi-camera-video-fill fs-3 me-2"></i>
                 <div>
                   <div class="status-title">Sistema Activo</div>
-                  <div class="status-text">Reconocimiento automático cada 5s</div>
+                  <div class="status-text">Reconocimiento automático cada 3s</div>
                 </div>
               </div>
 
@@ -339,7 +339,7 @@ async function iniciarCamara(): Promise<void> {
     if (videoElement.value) {
       videoElement.value.srcObject = stream;
       cameraActive.value = true;
-      verificacionInterval = setInterval(verificarRostroAutomatico, 5000);
+      verificacionInterval = setInterval(verificarRostroAutomatico, 3000);
     }
   } catch (error) {
     console.error('Error cámara:', error);
@@ -393,7 +393,7 @@ async function capturarYVerificar(): Promise<void> {
 
     if (!detection) {
       resultado.value = { success: false, message: 'No se detectó rostro' };
-      setTimeout(reiniciar, 5000);
+      setTimeout(reiniciar, 3000);
       return;
     }
 
@@ -424,20 +424,20 @@ async function capturarYVerificar(): Promise<void> {
       }
 
       await cargarEstadisticas();
-      setTimeout(reiniciar, 5000);
+      setTimeout(reiniciar, 3000);
     } else {
       resultado.value = {
         success: false,
         message: verificacion.message || 'Rostro no reconocido',
       };
-      setTimeout(reiniciar, 5000);
+      setTimeout(reiniciar, 3000);
     }
   } catch (error: any) {
     resultado.value = {
       success: false,
       message: error.response?.data?.message || 'Error al procesar',
     };
-    setTimeout(reiniciar, 5000);
+    setTimeout(reiniciar, 3000);
   } finally {
     procesando.value = false;
   }
@@ -465,7 +465,7 @@ function esSalida(tipo?: string): boolean {
 function reiniciar(): void {
   resultado.value = null;
   if (!verificacionInterval) {
-    verificacionInterval = setInterval(verificarRostroAutomatico, 5000);
+    verificacionInterval = setInterval(verificarRostroAutomatico, 3000);
   }
 }
 

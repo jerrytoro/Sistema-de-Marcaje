@@ -21,12 +21,16 @@ class DashboardService {
       const tardanzasHoy = asistenciasHoy.filter(
         (a: any) => a.minutosTardanza > 0
       ).length;
+      const salidasAnticipadasHoy = asistenciasHoy.filter(
+        (a: any) => a.minutosSalidaAnticipada > 0
+      ).length;
 
       return {
         totalFuncionarios: funcionarios.length,
         totalUsuarios: usuarios.length,
         asistenciasHoy: asistenciasHoy.length,
         tardanzasHoy: tardanzasHoy,
+        salidasAnticipadasHoy: salidasAnticipadasHoy,
       };
     } catch (error) {
       console.error('Error obteniendo estadísticas:', error);
@@ -35,6 +39,7 @@ class DashboardService {
         totalUsuarios: 0,
         asistenciasHoy: 0,
         tardanzasHoy: 0,
+        salidasAnticipadasHoy: 0,
       };
     }
   }
@@ -83,7 +88,7 @@ class DashboardService {
 
       // Agrupar por fecha
       const asistenciasPorDia = new Map<string, number>();
-      
+
       asistencias.forEach((asistencia) => {
         const fecha = new Date(asistencia.fecha).toLocaleDateString('es-BO');
         asistenciasPorDia.set(

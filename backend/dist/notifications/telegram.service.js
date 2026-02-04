@@ -48,27 +48,27 @@ let TelegramService = class TelegramService {
         this.bot.onText(/\/start$/, async (msg) => {
             const chatId = msg.chat.id;
             await this.bot.sendMessage(chatId, `
-🤖 *Bienvenido al Sistema de Asistencias*
+      🤖 *Bienvenido al Sistema de Asistencias*
 
-Para vincular tu cuenta:
-1. Ingresa al sistema web
-2. Ve a tu perfil
-3. Escanea el código QR
+      Para vincular tu cuenta:
+      1. Ingresa al sistema web
+      2. Ve a tu perfil
+      3. Escanea el código QR
 
-Una vez vinculado, recibirás notificaciones automáticas de tus marcajes.
+      Una vez vinculado, recibirás notificaciones automáticas de tus marcajes.
       `, { parse_mode: 'Markdown' });
         });
         this.bot.onText(/\/ayuda/, async (msg) => {
             const chatId = msg.chat.id;
             await this.bot.sendMessage(chatId, `
-📋 *Comandos Disponibles*
+      📋 *Comandos Disponibles*
 
-/start - Vincular cuenta
-/estado - Ver estado de vinculación
-/desvincular - Desvincular cuenta
-/ayuda - Ver esta ayuda
+      /start - Vincular cuenta
+      /estado - Ver estado de vinculación
+      /desvincular - Desvincular cuenta
+      /ayuda - Ver esta ayuda
 
-Para más información, contacta a RRHH.
+      Para más información, contacta a RRHH.
       `, { parse_mode: 'Markdown' });
         });
         this.bot.onText(/\/estado/, async (msg) => {
@@ -97,10 +97,10 @@ Para más información, contacta a RRHH.
             });
             if (!linkToken) {
                 await this.bot.sendMessage(chatId, `
-❌ *Código inválido o expirado*
+        ❌ *Código inválido o expirado*
 
-El código QR puede haber expirado. 
-Por favor, genera uno nuevo desde tu perfil.
+        El código QR puede haber expirado. 
+        Por favor, genera uno nuevo desde tu perfil.
         `, { parse_mode: 'Markdown' });
                 return;
             }
@@ -113,21 +113,21 @@ Por favor, genera uno nuevo desde tu perfil.
                 data: { usado: true },
             });
             await this.bot.sendMessage(chatId, `
-✅ *¡Vinculación exitosa!*
+      ✅ *¡Vinculación exitosa!*
 
-Tu cuenta ha sido vinculada con:
-👤 ${linkToken.funcionario.nombre} ${linkToken.funcionario.apellido}
-🆔 Funcionario ID: ${linkToken.funcionarioId}
-🏢 Cargo: ${linkToken.funcionario.cargo}
+      Tu cuenta ha sido vinculada con:
+      👤 ${linkToken.funcionario.nombre} ${linkToken.funcionario.apellido}
+      🆔 Funcionario ID: ${linkToken.funcionarioId}
+      🏢 Cargo: ${linkToken.funcionario.cargo}
 
-Ahora recibirás notificaciones automáticas de tus marcajes.
+      Ahora recibirás notificaciones automáticas de tus marcajes.
       `, { parse_mode: 'Markdown' });
         }
         catch (error) {
             console.error('Error vinculando cuenta:', error);
             await this.bot.sendMessage(chatId, `
-❌ Error al vincular cuenta.
-Por favor, contacta con soporte técnico.
+      ❌ Error al vincular cuenta.
+      Por favor, contacta con soporte técnico.
       `);
         }
     }
@@ -138,26 +138,26 @@ Por favor, contacta con soporte técnico.
             });
             if (!funcionario) {
                 await this.bot.sendMessage(chatId, `
-❌ *Cuenta no vinculada*
+        ❌ *Cuenta no vinculada*
 
-Tu cuenta de Telegram aún no está vinculada.
-Para vincularla:
-1. Ingresa al sistema web
-2. Ve a tu perfil
-3. Escanea el código QR
+        Tu cuenta de Telegram aún no está vinculada.
+        Para vincularla:
+        1. Ingresa al sistema web
+        2. Ve a tu perfil
+        3. Escanea el código QR
         `, { parse_mode: 'Markdown' });
                 return;
             }
             await this.bot.sendMessage(chatId, `
-✅ *Cuenta vinculada correctamente*
+      ✅ *Cuenta vinculada correctamente*
 
-👤 ${funcionario.nombre} ${funcionario.apellido}
-🏢 ${funcionario.cargo}
-📍 ${funcionario.dependencia}
-🆔 Funcionario ID: ${funcionario.id}
+      👤 ${funcionario.nombre} ${funcionario.apellido}
+      🏢 ${funcionario.cargo}
+      📍 ${funcionario.dependencia}
+      🆔 Funcionario ID: ${funcionario.id}
 
-Estado: Activo
-Notificaciones: Habilitadas
+      Estado: Activo
+      Notificaciones: Habilitadas
       `, { parse_mode: 'Markdown' });
         }
         catch (error) {
@@ -172,7 +172,7 @@ Notificaciones: Habilitadas
             });
             if (!funcionario) {
                 await this.bot.sendMessage(chatId, `
-❌ No hay ninguna cuenta vinculada a este Telegram.
+        ❌ No hay ninguna cuenta vinculada a este Telegram.
         `);
                 return;
             }
@@ -181,12 +181,12 @@ Notificaciones: Habilitadas
                 data: { telegramChatId: null },
             });
             await this.bot.sendMessage(chatId, `
-✅ *Cuenta desvinculada*
+      ✅ *Cuenta desvinculada*
 
-Tu cuenta ha sido desvinculada exitosamente.
-Ya no recibirás notificaciones.
+      Tu cuenta ha sido desvinculada exitosamente.
+      Ya no recibirás notificaciones.
 
-Para volver a vincular, escanea el código QR desde tu perfil.
+      Para volver a vincular, escanea el código QR desde tu perfil.
       `, { parse_mode: 'Markdown' });
         }
         catch (error) {
@@ -211,14 +211,14 @@ Para volver a vincular, escanea el código QR desde tu perfil.
                 : '✅ Normal';
         }
         const message = `
-✅ *Marcaje Registrado*
+    ✅ *Marcaje Registrado*
 
-👤 ${data.funcionario}
-${tipoEmoji} *Tipo:* ${this.formatTipoMarcaje(data.tipoMarcaje)}
-🕐 *Hora:* ${data.hora}
-${estadoText}
+    👤 ${data.funcionario}
+    ${tipoEmoji} *Tipo:* ${this.formatTipoMarcaje(data.tipoMarcaje)}
+    🕐 *Hora:* ${data.hora}
+    ${estadoText}
 
-Todo correcto ✅
+    Todo correcto ✅
     `;
         try {
             await this.bot.sendMessage(data.chatId, message, { parse_mode: 'Markdown' });

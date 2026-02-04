@@ -11,7 +11,7 @@ export class TelegramService implements OnModuleInit {
   constructor(
     private configService: ConfigService,
     private prisma: PrismaService,
-  ) {}
+  ) { }
 
   onModuleInit() {
     const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN');
@@ -46,46 +46,46 @@ export class TelegramService implements OnModuleInit {
     // Comando /start sin token
     this.bot.onText(/\/start$/, async (msg) => {
       const chatId = msg.chat.id;
-      
+
       await this.bot.sendMessage(chatId, `
-🤖 *Bienvenido al Sistema de Asistencias*
+      🤖 *Bienvenido al Sistema de Asistencias*
 
-Para vincular tu cuenta:
-1. Ingresa al sistema web
-2. Ve a tu perfil
-3. Escanea el código QR
+      Para vincular tu cuenta:
+      1. Ingresa al sistema web
+      2. Ve a tu perfil
+      3. Escanea el código QR
 
-Una vez vinculado, recibirás notificaciones automáticas de tus marcajes.
+      Una vez vinculado, recibirás notificaciones automáticas de tus marcajes.
       `, { parse_mode: 'Markdown' });
     });
 
     // Comando /ayuda
     this.bot.onText(/\/ayuda/, async (msg) => {
       const chatId = msg.chat.id;
-      
+
       await this.bot.sendMessage(chatId, `
-📋 *Comandos Disponibles*
+      📋 *Comandos Disponibles*
 
-/start - Vincular cuenta
-/estado - Ver estado de vinculación
-/desvincular - Desvincular cuenta
-/ayuda - Ver esta ayuda
+      /start - Vincular cuenta
+      /estado - Ver estado de vinculación
+      /desvincular - Desvincular cuenta
+      /ayuda - Ver esta ayuda
 
-Para más información, contacta a RRHH.
+      Para más información, contacta a RRHH.
       `, { parse_mode: 'Markdown' });
     });
 
     // Comando /estado
     this.bot.onText(/\/estado/, async (msg) => {
       const chatId = msg.chat.id;
-      
+
       await this.verificarEstadoVinculacion(chatId);
     });
 
     // Comando /desvincular
     this.bot.onText(/\/desvincular/, async (msg) => {
       const chatId = msg.chat.id;
-      
+
       await this.desvincularCuenta(chatId);
     });
 
@@ -114,10 +114,10 @@ Para más información, contacta a RRHH.
 
       if (!linkToken) {
         await this.bot.sendMessage(chatId, `
-❌ *Código inválido o expirado*
+        ❌ *Código inválido o expirado*
 
-El código QR puede haber expirado. 
-Por favor, genera uno nuevo desde tu perfil.
+        El código QR puede haber expirado. 
+        Por favor, genera uno nuevo desde tu perfil.
         `, { parse_mode: 'Markdown' });
         return;
       }
@@ -136,21 +136,21 @@ Por favor, genera uno nuevo desde tu perfil.
 
       // Confirmar vinculación
       await this.bot.sendMessage(chatId, `
-✅ *¡Vinculación exitosa!*
+      ✅ *¡Vinculación exitosa!*
 
-Tu cuenta ha sido vinculada con:
-👤 ${linkToken.funcionario.nombre} ${linkToken.funcionario.apellido}
-🆔 Funcionario ID: ${linkToken.funcionarioId}
-🏢 Cargo: ${linkToken.funcionario.cargo}
+      Tu cuenta ha sido vinculada con:
+      👤 ${linkToken.funcionario.nombre} ${linkToken.funcionario.apellido}
+      🆔 Funcionario ID: ${linkToken.funcionarioId}
+      🏢 Cargo: ${linkToken.funcionario.cargo}
 
-Ahora recibirás notificaciones automáticas de tus marcajes.
+      Ahora recibirás notificaciones automáticas de tus marcajes.
       `, { parse_mode: 'Markdown' });
 
     } catch (error) {
       console.error('Error vinculando cuenta:', error);
       await this.bot.sendMessage(chatId, `
-❌ Error al vincular cuenta.
-Por favor, contacta con soporte técnico.
+      ❌ Error al vincular cuenta.
+      Por favor, contacta con soporte técnico.
       `);
     }
   }
@@ -166,27 +166,27 @@ Por favor, contacta con soporte técnico.
 
       if (!funcionario) {
         await this.bot.sendMessage(chatId, `
-❌ *Cuenta no vinculada*
+        ❌ *Cuenta no vinculada*
 
-Tu cuenta de Telegram aún no está vinculada.
-Para vincularla:
-1. Ingresa al sistema web
-2. Ve a tu perfil
-3. Escanea el código QR
+        Tu cuenta de Telegram aún no está vinculada.
+        Para vincularla:
+        1. Ingresa al sistema web
+        2. Ve a tu perfil
+        3. Escanea el código QR
         `, { parse_mode: 'Markdown' });
         return;
       }
 
       await this.bot.sendMessage(chatId, `
-✅ *Cuenta vinculada correctamente*
+      ✅ *Cuenta vinculada correctamente*
 
-👤 ${funcionario.nombre} ${funcionario.apellido}
-🏢 ${funcionario.cargo}
-📍 ${funcionario.dependencia}
-🆔 Funcionario ID: ${funcionario.id}
+      👤 ${funcionario.nombre} ${funcionario.apellido}
+      🏢 ${funcionario.cargo}
+      📍 ${funcionario.dependencia}
+      🆔 Funcionario ID: ${funcionario.id}
 
-Estado: Activo
-Notificaciones: Habilitadas
+      Estado: Activo
+      Notificaciones: Habilitadas
       `, { parse_mode: 'Markdown' });
 
     } catch (error) {
@@ -206,7 +206,7 @@ Notificaciones: Habilitadas
 
       if (!funcionario) {
         await this.bot.sendMessage(chatId, `
-❌ No hay ninguna cuenta vinculada a este Telegram.
+        ❌ No hay ninguna cuenta vinculada a este Telegram.
         `);
         return;
       }
@@ -218,12 +218,12 @@ Notificaciones: Habilitadas
       });
 
       await this.bot.sendMessage(chatId, `
-✅ *Cuenta desvinculada*
+      ✅ *Cuenta desvinculada*
 
-Tu cuenta ha sido desvinculada exitosamente.
-Ya no recibirás notificaciones.
+      Tu cuenta ha sido desvinculada exitosamente.
+      Ya no recibirás notificaciones.
 
-Para volver a vincular, escanea el código QR desde tu perfil.
+      Para volver a vincular, escanea el código QR desde tu perfil.
       `, { parse_mode: 'Markdown' });
 
     } catch (error) {
@@ -247,10 +247,10 @@ Para volver a vincular, escanea el código QR desde tu perfil.
     if (!this.bot) return;
 
     const tipoEmoji = this.getTipoMarcajeEmoji(data.tipoMarcaje);
-    
+
     // ✅ LÓGICA DIFERENCIADA: Ingresos vs Salidas
     let estadoText = '';
-    
+
     if (data.tipoMarcaje === 'INGRESO_MANANA' || data.tipoMarcaje === 'INGRESO_TARDE') {
       // Para INGRESOS: Mostrar tardanza
       estadoText = data.minutosTardanza > 0
@@ -265,14 +265,14 @@ Para volver a vincular, escanea el código QR desde tu perfil.
     }
 
     const message = `
-✅ *Marcaje Registrado*
+    ✅ *Marcaje Registrado*
 
-👤 ${data.funcionario}
-${tipoEmoji} *Tipo:* ${this.formatTipoMarcaje(data.tipoMarcaje)}
-🕐 *Hora:* ${data.hora}
-${estadoText}
+    👤 ${data.funcionario}
+    ${tipoEmoji} *Tipo:* ${this.formatTipoMarcaje(data.tipoMarcaje)}
+    🕐 *Hora:* ${data.hora}
+    ${estadoText}
 
-Todo correcto ✅
+    Todo correcto ✅
     `;
 
     try {

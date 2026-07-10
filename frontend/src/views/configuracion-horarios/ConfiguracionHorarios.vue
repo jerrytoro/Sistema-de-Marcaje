@@ -588,10 +588,10 @@ onMounted(async () => {
               <hr class="my-4">
               <div class="d-flex gap-2 flex-wrap">
                 <button class="btn btn-warning" @click="openEditModal"><i class="bi bi-pencil me-2"></i>Editar</button>
-                <button class="btn btn-outline-info" @click="validarConfiguracion"><i
+                <!-- <button class="btn btn-outline-info" @click="validarConfiguracion"><i
                     class="bi bi-check-circle me-2"></i>Validar</button>
                 <button class="btn btn-outline-secondary" @click="verConflictos"><i
-                    class="bi bi-exclamation-triangle me-2"></i>Ver Conflictos</button>
+                    class="bi bi-exclamation-triangle me-2"></i>Ver Conflictos</button> -->
                 <button class="btn btn-outline-danger" @click="confirmarReset"><i
                     class="bi bi-arrow-counterclockwise me-2"></i>Restablecer</button>
               </div>

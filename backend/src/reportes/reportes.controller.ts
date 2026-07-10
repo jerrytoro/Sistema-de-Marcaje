@@ -12,6 +12,7 @@ import {
 import type { Response } from 'express';
 import { ReportesService } from './reportes.service';
 import { GenerarReporteDto } from './dto/generar-reporte.dto';
+import { GenerarReporteDependenciaDto } from './dto/generar-reporte-dependencia.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
@@ -35,6 +36,17 @@ export class ReportesController {
   @Roles('ADMIN', 'RRHH')
   generarReporte(@Body() generarReporteDto: GenerarReporteDto) {
     return this.reportesService.generarReporte(generarReporteDto);
+  }
+
+  /**
+   * POST /api/reportes/generar/dependencia
+   * Generar reportes por dependencia
+   * ADMIN y RRHH
+   */
+  @Post('generar/dependencia')
+  @Roles('ADMIN', 'RRHH')
+  generarReportesPorDependencia(@Body() dto: GenerarReporteDependenciaDto) {
+    return this.reportesService.generarReportesPorDependencia(dto);
   }
 
   /**

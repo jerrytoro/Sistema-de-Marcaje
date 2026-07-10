@@ -12,10 +12,10 @@
             <div>
               <h1 class="mb-1">
                 <i class="bi bi-camera-video me-2"></i>
-                Registro Facial (Procesamiento en Navegador)
+                Registro Facial
               </h1>
               <p class="text-muted mb-0">
-                Captura 5 fotos para mayor precisión - Todo se procesa en tu navegador
+                Captura 5 fotos para mayor precisión
               </p>
             </div>
           </div>
@@ -28,8 +28,6 @@
             </h5>
             <ul class="mb-0">
               <li>Se capturarán <strong>5 fotos</strong> desde diferentes ángulos</li>
-              <li>El reconocimiento facial se procesa <strong>en tu navegador</strong></li>
-              <li>Solo se envían datos numéricos al servidor (no imágenes)</li>
               <li>Mantén buena iluminación y mira a la cámara</li>
             </ul>
           </div>

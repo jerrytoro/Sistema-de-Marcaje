@@ -26,7 +26,7 @@ let ScheduledTasksService = ScheduledTasksService_1 = class ScheduledTasksServic
         this.telegramService = telegramService;
     }
     async verificarSalidasNoRegistradas() {
-        this.logger.log('🔍 Verificando salidas no registradas...');
+        this.logger.log('Verificando salidas no registradas...');
         try {
             const hoy = new Date();
             hoy.setHours(0, 0, 0, 0);
@@ -58,14 +58,14 @@ let ScheduledTasksService = ScheduledTasksService_1 = class ScheduledTasksServic
                     notificacionesEnviadas++;
                 }
             }
-            this.logger.log(`✅ Salidas no registradas: ${notificacionesEnviadas} notificaciones enviadas`);
+            this.logger.log(`Salidas no registradas: ${notificacionesEnviadas} notificaciones enviadas`);
         }
         catch (error) {
-            this.logger.error('❌ Error verificando salidas no registradas:', error);
+            this.logger.error('Error verificando salidas no registradas:', error);
         }
     }
     async recordatorioIngresoManana() {
-        this.logger.log('⏰ Enviando recordatorios de ingreso mañana...');
+        this.logger.log('Enviando recordatorios de ingreso mañana...');
         try {
             const hoy = new Date();
             hoy.setHours(0, 0, 0, 0);
@@ -97,14 +97,14 @@ let ScheduledTasksService = ScheduledTasksService_1 = class ScheduledTasksServic
                     notificacionesEnviadas++;
                 }
             }
-            this.logger.log(`✅ Recordatorios ingreso mañana: ${notificacionesEnviadas} enviados`);
+            this.logger.log(`Recordatorios ingreso mañana: ${notificacionesEnviadas} enviados`);
         }
         catch (error) {
-            this.logger.error('❌ Error enviando recordatorios ingreso mañana:', error);
+            this.logger.error('Error enviando recordatorios ingreso mañana:', error);
         }
     }
     async recordatorioIngresoTarde() {
-        this.logger.log('⏰ Enviando recordatorios de ingreso tarde...');
+        this.logger.log('Enviando recordatorios de ingreso tarde...');
         try {
             const hoy = new Date();
             hoy.setHours(0, 0, 0, 0);
@@ -136,14 +136,14 @@ let ScheduledTasksService = ScheduledTasksService_1 = class ScheduledTasksServic
                     notificacionesEnviadas++;
                 }
             }
-            this.logger.log(`✅ Recordatorios ingreso tarde: ${notificacionesEnviadas} enviados`);
+            this.logger.log(`Recordatorios ingreso tarde: ${notificacionesEnviadas} enviados`);
         }
         catch (error) {
-            this.logger.error('❌ Error enviando recordatorios ingreso tarde:', error);
+            this.logger.error('Error enviando recordatorios ingreso tarde:', error);
         }
     }
     async alertaFaltasMensuales() {
-        this.logger.log('🚨 Verificando faltas mensuales...');
+        this.logger.log('Verificando faltas mensuales...');
         try {
             const hoy = new Date();
             const inicioMes = (0, date_fns_1.startOfMonth)(hoy);
@@ -191,14 +191,14 @@ let ScheduledTasksService = ScheduledTasksService_1 = class ScheduledTasksServic
                     notificacionesEnviadas++;
                 }
             }
-            this.logger.log(`✅ Alertas de faltas: ${notificacionesEnviadas} notificaciones enviadas`);
+            this.logger.log(`Alertas de faltas: ${notificacionesEnviadas} notificaciones enviadas`);
         }
         catch (error) {
-            this.logger.error('❌ Error verificando faltas mensuales:', error);
+            this.logger.error('Error verificando faltas mensuales:', error);
         }
     }
     async limpiarTokensExpirados() {
-        this.logger.log('🧹 Limpiando tokens expirados...');
+        this.logger.log('Limpiando tokens expirados...');
         try {
             const result = await this.prisma.telegramLinkToken.deleteMany({
                 where: {
@@ -208,14 +208,14 @@ let ScheduledTasksService = ScheduledTasksService_1 = class ScheduledTasksServic
                     ],
                 },
             });
-            this.logger.log(`✅ Tokens eliminados: ${result.count}`);
+            this.logger.log(`Tokens eliminados: ${result.count}`);
         }
         catch (error) {
-            this.logger.error('❌ Error limpiando tokens:', error);
+            this.logger.error('Error limpiando tokens:', error);
         }
     }
     async limpiarFotosAntiguas() {
-        this.logger.log('🗑️  Limpiando fotos antiguas...');
+        this.logger.log('Limpiando fotos antiguas...');
         try {
             const hace90Dias = new Date();
             hace90Dias.setDate(hace90Dias.getDate() - 90);
@@ -227,15 +227,15 @@ let ScheduledTasksService = ScheduledTasksService_1 = class ScheduledTasksServic
                     asistencia: true,
                 },
             });
-            this.logger.log(`📊 Fotos antiguas encontradas: ${marcajesAntiguos.length}`);
-            this.logger.log(`✅ Limpieza de fotos completada`);
+            this.logger.log(`Fotos antiguas encontradas: ${marcajesAntiguos.length}`);
+            this.logger.log(`Limpieza de fotos completada`);
         }
         catch (error) {
-            this.logger.error('❌ Error limpiando fotos antiguas:', error);
+            this.logger.error('Error limpiando fotos antiguas:', error);
         }
     }
     async ejecutarTareaManual(nombreTarea) {
-        this.logger.log(`🔧 Ejecutando tarea manual: ${nombreTarea}`);
+        this.logger.log(`Ejecutando tarea manual: ${nombreTarea}`);
         switch (nombreTarea) {
             case 'salidas-no-registradas':
                 await this.verificarSalidasNoRegistradas();

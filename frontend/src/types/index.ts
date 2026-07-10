@@ -159,6 +159,12 @@ export interface GenerarReporteDto {
   mes: number;
 }
 
+export interface GenerarReporteDependenciaDto {
+  dependencia: string;
+  anio: number;
+  mes: number;
+}
+
 // ========================================
 // ESTADÍSTICAS
 // ========================================

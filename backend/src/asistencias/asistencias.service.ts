@@ -184,7 +184,7 @@ export class AsistenciasService {
 // backend/src/asistencias/asistencias.service.ts
 
 async create(createAsistenciaDto: CreateAsistenciaDto) {
-  const { funcionarioId, fecha, horaMarcaje, tipoMarcaje } = createAsistenciaDto;
+  const { funcionarioId, fecha, horaMarcaje, tipoMarcaje, observacion } = createAsistenciaDto;
 
   console.log('📥 Recibido del frontend:', { fecha, horaMarcaje, tipoMarcaje });
 
@@ -201,14 +201,17 @@ async create(createAsistenciaDto: CreateAsistenciaDto) {
     horaMarcajeCompleta
   });
 
-  // Buscar configuración
+  // Validar ventana de marcaje (esto lanzará un error si está fuera de las ventanas permitidas)
+  const tipoMarcajeValidado = await this.determinarTipoMarcaje(horaMarcajeCompleta);
+
+  // Buscar configuración usando el tipo validado
   const config = await this.prisma.configuracionHorario.findUnique({
-    where: { tipoMarcaje },
+    where: { tipoMarcaje: tipoMarcajeValidado },
   });
 
   if (!config) {
     throw new NotFoundException(
-      `No existe configuración para ${tipoMarcaje}`,
+      `No existe configuración para ${tipoMarcajeValidado}`,
     );
   }
 
@@ -220,7 +223,7 @@ async create(createAsistenciaDto: CreateAsistenciaDto) {
   let minutosTardanza = 0;
   let minutosSalidaAnticipada = 0;
 
-  if (tipoMarcaje === 'INGRESO_MANANA' || tipoMarcaje === 'INGRESO_TARDE') {
+  if (tipoMarcajeValidado === 'INGRESO_MANANA' || tipoMarcajeValidado === 'INGRESO_TARDE') {
     const diferencia = hMarcaje - hEsperada - config.toleranciaMinutos;
     minutosTardanza = diferencia > 0 ? diferencia : 0;
   } else {
@@ -234,11 +237,12 @@ async create(createAsistenciaDto: CreateAsistenciaDto) {
       funcionarioId,
       fecha: fechaSolo,
       horaMarcaje: horaMarcajeCompleta,  // ✅ Usar fecha + hora combinada
-      tipoMarcaje,
+      tipoMarcaje: tipoMarcajeValidado,
       metodoMarcaje: 'MANUAL',
       minutosTardanza,
       minutosSalidaAnticipada,
       verificado: true,
+      observacion: observacion || null,
     },
     include: {
       funcionario: true,

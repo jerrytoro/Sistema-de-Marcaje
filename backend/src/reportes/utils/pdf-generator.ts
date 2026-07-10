@@ -106,7 +106,7 @@ export class PDFGenerator {
           dia.totalSalidaAnticipada > 0
             ? this.formatearTiempo(dia.totalSalidaAnticipada)
             : '-',
-        permisos: '-',
+        permisos: dia.permisos || '-',
         jornada: this.formatearTiempo(dia.jornada),
         cantidadMarcajes,
       };
@@ -173,60 +173,64 @@ export class PDFGenerator {
         totalTardanza: 0,
         totalSalidaAnticipada: 0,
         jornada: 0,
+        permisos: '-',
       };
 
-      // Asignar marcajes según su orden
-      if (marcajesDia.length >= 1) {
-        const horaReal = marcajesDia[0].horaMarcaje
-          .toTimeString()
-          .substring(0, 5);
-        const tardanza = marcajesDia[0].minutosTardanza || 0;
-        const tolerancia = horarios.toleranciaIngresoManana || 0;
+      const permisosArray: string[] = [];
 
-        dia.ingresoManana = {
-          hora: horaReal + (tolerancia > 0 ? ` (+${tolerancia})` : ''),
-          tardanza: tardanza,
-          horaReal: horaReal,
-          tolerancia: tolerancia,
-        };
-        dia.totalTardanza += tardanza;
-      }
-      if (marcajesDia.length >= 2) {
-        const horaReal = marcajesDia[1].horaMarcaje
-          .toTimeString()
-          .substring(0, 5);
-        dia.salidaDescanso = {
-          hora: horaReal,
-          anticipada: marcajesDia[1].minutosSalidaAnticipada || 0,
-        };
-        dia.totalSalidaAnticipada +=
-          marcajesDia[1].minutosSalidaAnticipada || 0;
-      }
-      if (marcajesDia.length >= 3) {
-        const horaReal = marcajesDia[2].horaMarcaje
-          .toTimeString()
-          .substring(0, 5);
-        const tardanza = marcajesDia[2].minutosTardanza || 0;
-        const tolerancia = horarios.toleranciaIngresoTarde || 0;
+      // Asignar marcajes según su tipo
+      marcajesDia.forEach((marcaje) => {
+        const horaReal = marcaje.horaMarcaje.toTimeString().substring(0, 5);
+        const tardanza = marcaje.minutosTardanza || 0;
+        const anticipada = marcaje.minutosSalidaAnticipada || 0;
 
-        dia.ingresoTarde = {
-          hora: horaReal + (tolerancia > 0 ? ` (+${tolerancia})` : ''),
-          tardanza: tardanza,
-          horaReal: horaReal,
-          tolerancia: tolerancia,
-        };
-        dia.totalTardanza += tardanza;
-      }
-      if (marcajesDia.length >= 4) {
-        const horaReal = marcajesDia[3].horaMarcaje
-          .toTimeString()
-          .substring(0, 5);
-        dia.salidaFinal = {
-          hora: horaReal,
-          anticipada: marcajesDia[3].minutosSalidaAnticipada || 0,
-        };
-        dia.totalSalidaAnticipada +=
-          marcajesDia[3].minutosSalidaAnticipada || 0;
+        if (marcaje.observacion && marcaje.observacion.trim() !== '') {
+          permisosArray.push(marcaje.observacion.trim());
+        }
+
+        switch (marcaje.tipoMarcaje) {
+          case 'INGRESO_MANANA':
+            const toleranciaManana = horarios.toleranciaIngresoManana || 0;
+            dia.ingresoManana = {
+              hora: horaReal + (toleranciaManana > 0 ? ` (+${toleranciaManana})` : ''),
+              tardanza: tardanza,
+              horaReal: horaReal,
+              tolerancia: toleranciaManana,
+            };
+            dia.totalTardanza += tardanza;
+            break;
+
+          case 'SALIDA_DESCANSO':
+            dia.salidaDescanso = {
+              hora: horaReal,
+              anticipada: anticipada,
+            };
+            dia.totalSalidaAnticipada += anticipada;
+            break;
+
+          case 'INGRESO_TARDE':
+            const toleranciaTarde = horarios.toleranciaIngresoTarde || 0;
+            dia.ingresoTarde = {
+              hora: horaReal + (toleranciaTarde > 0 ? ` (+${toleranciaTarde})` : ''),
+              tardanza: tardanza,
+              horaReal: horaReal,
+              tolerancia: toleranciaTarde,
+            };
+            dia.totalTardanza += tardanza;
+            break;
+
+          case 'SALIDA_FINAL':
+            dia.salidaFinal = {
+              hora: horaReal,
+              anticipada: anticipada,
+            };
+            dia.totalSalidaAnticipada += anticipada;
+            break;
+        }
+      });
+
+      if (permisosArray.length > 0) {
+        dia.permisos = permisosArray.join(', ');
       }
 
       // Calcular jornada según la nueva lógica
@@ -425,7 +429,7 @@ export class PDFGenerator {
     datosReporte: DatosReporte,
     startY: number,
   ): void {
-    const colWidth = 57;
+    const colWidths = [35, 45, 50, 45, 50, 45, 50, 150, 45]; // Suma total = 515
     const rowHeight = 15; // Líneas más delgadas
     const headerHeight = 24; // Header un poco más alto
     const margin = 40;
@@ -446,16 +450,17 @@ export class PDFGenerator {
     // Dibujar encabezado
     doc.fontSize(8).font('Helvetica-Bold');
     headers.forEach((header, i) => {
-      const x = margin + i * colWidth;
+      // Calcular X acumulando los anchos previos
+      const x = margin + colWidths.slice(0, i).reduce((a, b) => a + b, 0);
 
       // Fondo azul para encabezado
       doc
-        .rect(x, yPos, colWidth, headerHeight)
+        .rect(x, yPos, colWidths[i], headerHeight)
         .fillAndStroke('#5a5a5a', '#fff');
 
       // Texto blanco centrado
       doc.fillColor('#fff').text(header, x + 2, yPos + 5, {
-        width: colWidth - 4,
+        width: colWidths[i] - 4,
         align: 'center',
       });
     });
@@ -464,7 +469,7 @@ export class PDFGenerator {
     yPos += 3; // Espacio después del header
 
     // Dibujar filas de datos
-    doc.fontSize(8).font('Helvetica');
+    doc.fontSize(9).font('Helvetica'); // Letra un poco más pequeña para los permisos
     datosReporte.asistenciasPorDia.forEach((dia) => {
       const rowData = [
         dia.fecha,
@@ -478,8 +483,15 @@ export class PDFGenerator {
         dia.jornada,
       ];
 
+      // Determinar altura máxima necesaria para la celda de Permisos
+      let maxRowHeight = rowHeight;
+      const permisosHeight = doc.heightOfString(dia.permisos, { width: colWidths[7] - 4, align: 'center' });
+      if (permisosHeight + 6 > maxRowHeight) {
+        maxRowHeight = permisosHeight + 6;
+      }
+
       rowData.forEach((data, i) => {
-        const x = margin + i * colWidth;
+        const x = margin + colWidths.slice(0, i).reduce((a, b) => a + b, 0);
 
         // Determinar color de fondo
         let fillColor = '#fff';
@@ -504,16 +516,20 @@ export class PDFGenerator {
         }
 
         // Dibujar celda
-        doc.rect(x, yPos, colWidth, rowHeight).fillAndStroke(fillColor, '#000');
+        doc.rect(x, yPos, colWidths[i], maxRowHeight).fillAndStroke(fillColor, '#000');
+
+        // Calcular desplazamiento en Y para centrar verticalmente si es de 1 línea
+        const textHeight = doc.heightOfString(String(data), { width: colWidths[i] - 4, align: 'center' });
+        const yOffset = (maxRowHeight - textHeight) / 2;
 
         // Texto centrado
-        doc.fillColor(textColor).text(data, x + 2, yPos + 5, {
-          width: colWidth - 4,
+        doc.fillColor(textColor).text(String(data), x + 2, yPos + yOffset, {
+          width: colWidths[i] - 4,
           align: 'center',
         });
       });
 
-      yPos += rowHeight;
+      yPos += maxRowHeight;
 
       // Verificar si necesitamos nueva página
       if (yPos > doc.page.height - 100) {
@@ -523,18 +539,18 @@ export class PDFGenerator {
         // Re-dibujar encabezado en nueva página
         doc.fontSize(8).font('Helvetica-Bold');
         headers.forEach((header, i) => {
-          const x = margin + i * colWidth;
+          const x = margin + colWidths.slice(0, i).reduce((a, b) => a + b, 0);
           doc
-            .rect(x, yPos, colWidth, headerHeight)
+            .rect(x, yPos, colWidths[i], headerHeight)
             .fillAndStroke('#5a5a5a', '#fff');
-          doc.fillColor('#000').text(header, x + 2, yPos + 5, {
-            width: colWidth - 4,
+          doc.fillColor('#fff').text(header, x + 2, yPos + 5, {
+            width: colWidths[i] - 4,
             align: 'center',
           });
         });
         yPos += headerHeight;
         yPos += 3; // Espacio después del header
-        doc.fontSize(8).font('Helvetica');
+        doc.fontSize(7).font('Helvetica');
       }
     });
 
@@ -543,7 +559,7 @@ export class PDFGenerator {
 
     // Fila de totales
     const totalesData = [
-      'TOTAL MES',
+      'TOTAL',
       '-',
       '-',
       '-',
@@ -554,16 +570,16 @@ export class PDFGenerator {
       datosReporte.resumen.tiempoTrabajado,
     ];
 
-    doc.font('Helvetica-Bold');
+    doc.fontSize(9).font('Helvetica-Bold');
     totalesData.forEach((data, i) => {
-      const x = margin + i * colWidth;
+      const x = margin + colWidths.slice(0, i).reduce((a, b) => a + b, 0);
 
       // Fondo rojo con texto negro
       doc
-        .rect(x, yPos, colWidth, rowHeight + 3)
+        .rect(x, yPos, colWidths[i], rowHeight + 3)
         .fillAndStroke('#ff4040', '#fff');
-      doc.fillColor('#fff').text(data, x + 2, yPos + 6, {
-        width: colWidth - 4,
+      doc.fillColor('#fff').text(String(data), x + 2, yPos + 6, {
+        width: colWidths[i] - 4,
         align: 'center',
       });
     });

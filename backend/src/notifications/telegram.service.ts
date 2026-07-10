@@ -18,16 +18,16 @@ export class TelegramService implements OnModuleInit {
     this.botUsername = this.configService.get<string>('TELEGRAM_BOT_USERNAME') || '';
 
     if (!token) {
-      console.warn('⚠️  TELEGRAM_BOT_TOKEN no configurado. Bot de Telegram deshabilitado.');
+      console.warn('TELEGRAM_BOT_TOKEN no configurado. Bot de Telegram deshabilitado.');
       return;
     }
 
     try {
       this.bot = new TelegramBot(token, { polling: true });
       this.setupBotCommands();
-      console.log('✅ Bot de Telegram iniciado correctamente');
+      console.log('Bot de Telegram iniciado correctamente');
     } catch (error) {
-      console.error('❌ Error al iniciar bot de Telegram:', error);
+      console.error('Error al iniciar bot de Telegram:', error);
     }
   }
 

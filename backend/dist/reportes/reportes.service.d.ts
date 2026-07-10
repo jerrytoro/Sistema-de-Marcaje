@@ -1,5 +1,6 @@
 import { PrismaService } from '../database/prisma.service';
 import { GenerarReporteDto } from './dto/generar-reporte.dto';
+import { GenerarReporteDependenciaDto } from './dto/generar-reporte-dependencia.dto';
 import type { Response } from 'express';
 export declare class ReportesService {
     private prisma;
@@ -28,6 +29,13 @@ export declare class ReportesService {
         totalPermisos: number;
         reporteGenerado: boolean;
         urlReportePdf: string | null;
+    }>;
+    generarReportesPorDependencia(dto: GenerarReporteDependenciaDto): Promise<{
+        success: boolean;
+        mensaje: string;
+        generados: number;
+        omitidos: number;
+        reportes: any[];
     }>;
     findAll(): Promise<{
         fechaGeneracion: string;

@@ -1,6 +1,7 @@
 import type { Response } from 'express';
 import { ReportesService } from './reportes.service';
 import { GenerarReporteDto } from './dto/generar-reporte.dto';
+import { GenerarReporteDependenciaDto } from './dto/generar-reporte-dependencia.dto';
 export declare class ReportesController {
     private readonly reportesService;
     constructor(reportesService: ReportesService);
@@ -25,6 +26,13 @@ export declare class ReportesController {
         totalPermisos: number;
         reporteGenerado: boolean;
         urlReportePdf: string | null;
+    }>;
+    generarReportesPorDependencia(dto: GenerarReporteDependenciaDto): Promise<{
+        success: boolean;
+        mensaje: string;
+        generados: number;
+        omitidos: number;
+        reportes: any[];
     }>;
     findAll(): Promise<{
         fechaGeneracion: string;

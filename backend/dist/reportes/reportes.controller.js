@@ -16,6 +16,7 @@ exports.ReportesController = void 0;
 const common_1 = require("@nestjs/common");
 const reportes_service_1 = require("./reportes.service");
 const generar_reporte_dto_1 = require("./dto/generar-reporte.dto");
+const generar_reporte_dependencia_dto_1 = require("./dto/generar-reporte-dependencia.dto");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 let ReportesController = class ReportesController {
@@ -25,6 +26,9 @@ let ReportesController = class ReportesController {
     }
     generarReporte(generarReporteDto) {
         return this.reportesService.generarReporte(generarReporteDto);
+    }
+    generarReportesPorDependencia(dto) {
+        return this.reportesService.generarReportesPorDependencia(dto);
     }
     findAll() {
         return this.reportesService.findAll();
@@ -54,6 +58,14 @@ __decorate([
     __metadata("design:paramtypes", [generar_reporte_dto_1.GenerarReporteDto]),
     __metadata("design:returntype", void 0)
 ], ReportesController.prototype, "generarReporte", null);
+__decorate([
+    (0, common_1.Post)('generar/dependencia'),
+    (0, roles_decorator_1.Roles)('ADMIN', 'RRHH'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [generar_reporte_dependencia_dto_1.GenerarReporteDependenciaDto]),
+    __metadata("design:returntype", void 0)
+], ReportesController.prototype, "generarReportesPorDependencia", null);
 __decorate([
     (0, common_1.Get)(),
     (0, roles_decorator_1.Roles)('ADMIN', 'RRHH'),

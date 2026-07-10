@@ -37,6 +37,7 @@ const core_1 = require("@nestjs/core");
 const common_1 = require("@nestjs/common");
 const app_module_1 = require("./app.module");
 const express = __importStar(require("express"));
+const swagger_1 = require("@nestjs/swagger");
 process.env.TZ = 'America/La_Paz';
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
@@ -53,14 +54,19 @@ async function bootstrap() {
     app.enableCors();
     app.use('/uploads', express.static('uploads'));
     const port = process.env.PORT || 3000;
+    const config = new swagger_1.DocumentBuilder()
+        .setTitle('API GAMC')
+        .setDescription('Descripción de la API')
+        .setVersion('1.0')
+        .build();
+    const document = swagger_1.SwaggerModule.createDocument(app, config);
+    swagger_1.SwaggerModule.setup('api/docs', app, document, {
+        customCss: `
+      .swagger-ui { background-color: #ffffff; }
+      body { background-color: #ffffff; }
+    `,
+    });
     await app.listen(port);
-    console.log('');
-    console.log('🚀 ================================================');
-    console.log(`✅ Servidor corriendo en: http://localhost:${port}`);
-    console.log(`📡 API disponible en: http://localhost:${port}/api`);
-    console.log('🗄️  Base de datos: PostgreSQL');
-    console.log('================================================');
-    console.log('');
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

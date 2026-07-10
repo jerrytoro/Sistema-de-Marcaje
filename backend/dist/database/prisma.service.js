@@ -15,16 +15,16 @@ const client_1 = require("@prisma/client");
 let PrismaService = class PrismaService extends client_1.PrismaClient {
     constructor() {
         super({
-            log: ['query', 'info', 'warn', 'error'],
+            log: ['warn', 'error'],
         });
     }
     async onModuleInit() {
         await this.$connect();
-        console.log('✅ Conectado a la base de datos PostgreSQL');
+        console.log('Conectado a la base de datos PostgreSQL');
     }
     async onModuleDestroy() {
         await this.$disconnect();
-        console.log('❌ Desconectado de la base de datos PostgreSQL');
+        console.log('Desconectado de la base de datos PostgreSQL');
     }
     async cleanDatabase() {
         if (process.env.NODE_ENV === 'production') {
@@ -40,7 +40,7 @@ let PrismaService = class PrismaService extends client_1.PrismaClient {
             }
         }
         await this.$executeRawUnsafe('SET session_replication_role = DEFAULT;');
-        console.log('🧹 Base de datos limpiada');
+        console.log('Base de datos limpiada');
     }
 };
 exports.PrismaService = PrismaService;

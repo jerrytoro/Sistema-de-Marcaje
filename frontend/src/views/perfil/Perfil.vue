@@ -191,14 +191,14 @@ onMounted(() => {
                     </div>
                   </div>
                   
-                  <hr class="my-4">
+                  <!-- <hr class="my-4"> -->
                   
-                  <div class="d-flex gap-2">
+                  <!-- <div class="d-flex gap-2">
                     <button class="btn btn-outline-secondary" @click="cambiarContrasena">
                       <i class="bi bi-key me-2"></i>
                       Cambiar Contraseña
                     </button>
-                  </div>
+                  </div> -->
                 </div>
               </div>
             </div>

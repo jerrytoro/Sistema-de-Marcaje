@@ -23,7 +23,7 @@ export class ScheduledTasksService {
     timeZone: 'America/La_Paz',
   })
   async verificarSalidasNoRegistradas() {
-    this.logger.log('🔍 Verificando salidas no registradas...');
+    this.logger.log('Verificando salidas no registradas...');
 
     try {
       const hoy = new Date();
@@ -66,9 +66,9 @@ export class ScheduledTasksService {
         }
       }
 
-      this.logger.log(`✅ Salidas no registradas: ${notificacionesEnviadas} notificaciones enviadas`);
+      this.logger.log(`Salidas no registradas: ${notificacionesEnviadas} notificaciones enviadas`);
     } catch (error) {
-      this.logger.error('❌ Error verificando salidas no registradas:', error);
+      this.logger.error('Error verificando salidas no registradas:', error);
     }
   }
 
@@ -81,7 +81,7 @@ export class ScheduledTasksService {
     timeZone: 'America/La_Paz',
   })
   async recordatorioIngresoManana() {
-    this.logger.log('⏰ Enviando recordatorios de ingreso mañana...');
+    this.logger.log('Enviando recordatorios de ingreso mañana...');
 
     try {
       const hoy = new Date();
@@ -123,9 +123,9 @@ export class ScheduledTasksService {
         }
       }
 
-      this.logger.log(`✅ Recordatorios ingreso mañana: ${notificacionesEnviadas} enviados`);
+      this.logger.log(`Recordatorios ingreso mañana: ${notificacionesEnviadas} enviados`);
     } catch (error) {
-      this.logger.error('❌ Error enviando recordatorios ingreso mañana:', error);
+      this.logger.error('Error enviando recordatorios ingreso mañana:', error);
     }
   }
 
@@ -138,7 +138,7 @@ export class ScheduledTasksService {
     timeZone: 'America/La_Paz',
   })
   async recordatorioIngresoTarde() {
-    this.logger.log('⏰ Enviando recordatorios de ingreso tarde...');
+    this.logger.log('Enviando recordatorios de ingreso tarde...');
 
     try {
       const hoy = new Date();
@@ -179,9 +179,9 @@ export class ScheduledTasksService {
         }
       }
 
-      this.logger.log(`✅ Recordatorios ingreso tarde: ${notificacionesEnviadas} enviados`);
+      this.logger.log(`Recordatorios ingreso tarde: ${notificacionesEnviadas} enviados`);
     } catch (error) {
-      this.logger.error('❌ Error enviando recordatorios ingreso tarde:', error);
+      this.logger.error('Error enviando recordatorios ingreso tarde:', error);
     }
   }
 
@@ -194,7 +194,7 @@ export class ScheduledTasksService {
     timeZone: 'America/La_Paz',
   })
   async alertaFaltasMensuales() {
-    this.logger.log('🚨 Verificando faltas mensuales...');
+    this.logger.log('Verificando faltas mensuales...');
 
     try {
       const hoy = new Date();
@@ -261,9 +261,9 @@ export class ScheduledTasksService {
         }
       }
 
-      this.logger.log(`✅ Alertas de faltas: ${notificacionesEnviadas} notificaciones enviadas`);
+      this.logger.log(`Alertas de faltas: ${notificacionesEnviadas} notificaciones enviadas`);
     } catch (error) {
-      this.logger.error('❌ Error verificando faltas mensuales:', error);
+      this.logger.error('Error verificando faltas mensuales:', error);
     }
   }
 
@@ -276,7 +276,7 @@ export class ScheduledTasksService {
     timeZone: 'America/La_Paz',
   })
   async limpiarTokensExpirados() {
-    this.logger.log('🧹 Limpiando tokens expirados...');
+    this.logger.log('Limpiando tokens expirados...');
 
     try {
       const result = await this.prisma.telegramLinkToken.deleteMany({
@@ -288,9 +288,9 @@ export class ScheduledTasksService {
         },
       });
 
-      this.logger.log(`✅ Tokens eliminados: ${result.count}`);
+      this.logger.log(`Tokens eliminados: ${result.count}`);
     } catch (error) {
-      this.logger.error('❌ Error limpiando tokens:', error);
+      this.logger.error('Error limpiando tokens:', error);
     }
   }
 
@@ -303,7 +303,7 @@ export class ScheduledTasksService {
     timeZone: 'America/La_Paz',
   })
   async limpiarFotosAntiguas() {
-    this.logger.log('🗑️  Limpiando fotos antiguas...');
+    this.logger.log('Limpiando fotos antiguas...');
 
     try {
       const hace90Dias = new Date();
@@ -319,15 +319,15 @@ export class ScheduledTasksService {
         },
       });
 
-      this.logger.log(`📊 Fotos antiguas encontradas: ${marcajesAntiguos.length}`);
+      this.logger.log(`Fotos antiguas encontradas: ${marcajesAntiguos.length}`);
 
       // Nota: La eliminación física de archivos debe hacerse con cuidado
       // Por ahora solo registramos cuántas hay
       // En producción, aquí se eliminarían los archivos del filesystem
 
-      this.logger.log(`✅ Limpieza de fotos completada`);
+      this.logger.log(`Limpieza de fotos completada`);
     } catch (error) {
-      this.logger.error('❌ Error limpiando fotos antiguas:', error);
+      this.logger.error('Error limpiando fotos antiguas:', error);
     }
   }
 
@@ -335,7 +335,7 @@ export class ScheduledTasksService {
    * Método manual para ejecutar tareas (testing)
    */
   async ejecutarTareaManual(nombreTarea: string): Promise<any> {
-    this.logger.log(`🔧 Ejecutando tarea manual: ${nombreTarea}`);
+    this.logger.log(`Ejecutando tarea manual: ${nombreTarea}`);
 
     switch (nombreTarea) {
       case 'salidas-no-registradas':

@@ -325,26 +325,11 @@
                 </select>
               </div>
 
-              <!-- ✅ CONDICIONAL: Solo mostrar tardanza para INGRESOS -->
-              <div v-if="formCreate.tipoMarcaje === 'INGRESO_MANANA' || formCreate.tipoMarcaje === 'INGRESO_TARDE'"
-                class="mb-3">
-                <label class="form-label">
-                  <i class="bi bi-clock me-1"></i>
-                  Minutos de Tardanza
-                </label>
-                <input type="number" class="form-control" v-model.number="formCreate.minutosTardanza" min="0" />
-                <small class="text-muted">Tiempo de retraso respecto a la hora programada</small>
-              </div>
+              <!-- Se eliminaron los campos de minutos de tardanza y salida anticipada -->
 
-              <!-- ✅ CONDICIONAL: Solo mostrar salida anticipada para SALIDAS -->
-              <div v-if="formCreate.tipoMarcaje === 'SALIDA_DESCANSO' || formCreate.tipoMarcaje === 'SALIDA_FINAL'"
-                class="mb-3">
-                <label class="form-label">
-                  <i class="bi bi-exclamation-circle me-1"></i>
-                  Minutos de Salida Anticipada
-                </label>
-                <input type="number" class="form-control" v-model.number="formCreate.minutosSalidaAnticipada" min="0" />
-                <small class="text-muted">Tiempo que salió antes de la hora programada</small>
+              <div class="mb-3">
+                <label class="form-label">Observación</label>
+                <textarea class="form-control" v-model="formCreate.observacion" rows="3"></textarea>
               </div>
 
               <div class="modal-footer border-0 px-0 pb-0 mt-4">
@@ -388,29 +373,7 @@
                 <input type="time" class="form-control" v-model="formEdit.horaMarcaje" />
               </div>
 
-              <!-- ✅ CONDICIONAL: Solo mostrar tardanza para INGRESOS -->
-              <div
-                v-if="selectedAsistencia && (selectedAsistencia.tipoMarcaje === 'INGRESO_MANANA' || selectedAsistencia.tipoMarcaje === 'INGRESO_TARDE')"
-                class="mb-3">
-                <label class="form-label">
-                  <i class="bi bi-clock me-1"></i>
-                  Minutos de Tardanza
-                </label>
-                <input type="number" class="form-control" v-model.number="formEdit.minutosTardanza" min="0" />
-                <small class="text-muted">Tiempo de retraso respecto a la hora programada</small>
-              </div>
-
-              <!-- ✅ CONDICIONAL: Solo mostrar salida anticipada para SALIDAS -->
-              <div
-                v-if="selectedAsistencia && (selectedAsistencia.tipoMarcaje === 'SALIDA_DESCANSO' || selectedAsistencia.tipoMarcaje === 'SALIDA_FINAL')"
-                class="mb-3">
-                <label class="form-label">
-                  <i class="bi bi-exclamation-circle me-1"></i>
-                  Minutos de Salida Anticipada
-                </label>
-                <input type="number" class="form-control" v-model.number="formEdit.minutosSalidaAnticipada" min="0" />
-                <small class="text-muted">Tiempo que salió antes de la hora programada</small>
-              </div>
+              <!-- Se eliminaron los campos de minutos de tardanza y salida anticipada -->
 
               <div class="mb-3">
                 <label class="form-label">Observación</label>
@@ -453,14 +416,11 @@ const formCreate = reactive<CreateAsistenciaDto>({
   fecha: new Date().toISOString().split('T')[0],
   horaMarcaje: new Date().toTimeString().slice(0, 5),
   tipoMarcaje: 'INGRESO_MANANA' as any,
-  minutosTardanza: 0,
-  minutosSalidaAnticipada: 0,
+  observacion: '',
 });
 
 const formEdit = reactive<UpdateAsistenciaDto>({
   horaMarcaje: '',
-  minutosTardanza: 0,
-  minutosSalidaAnticipada: 0,
   observacion: '',
 });
 
@@ -525,8 +485,6 @@ const loadTodas = async () => {
 const selectAsistenciaEdit = (asistencia: Asistencia) => {
   selectedAsistencia.value = asistencia;
   formEdit.horaMarcaje = new Date(asistencia.horaMarcaje).toTimeString().slice(0, 5);
-  formEdit.minutosTardanza = asistencia.minutosTardanza;
-  formEdit.minutosSalidaAnticipada = asistencia.minutosSalidaAnticipada;  // ✅ AGREGAR
   formEdit.observacion = asistencia.observacion || '';
 
   abrirModalEditar();
@@ -543,8 +501,7 @@ const handleCreate = async () => {
     formCreate.fecha = new Date().toISOString().split('T')[0];
     formCreate.horaMarcaje = new Date().toTimeString().slice(0, 5);
     formCreate.tipoMarcaje = 'INGRESO_MANANA' as any;
-    formCreate.minutosTardanza = 0;
-    formCreate.minutosSalidaAnticipada = 0;  // ✅ AGREGAR
+    formCreate.observacion = '';
 
     await loadHoy();
     alert('Marcaje registrado exitosamente');

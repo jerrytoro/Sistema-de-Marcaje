@@ -55,7 +55,7 @@ let AsistenciasService = class AsistenciasService {
         return diferencia > 0 ? diferencia : 0;
     }
     async create(createAsistenciaDto) {
-        const { funcionarioId, fecha, horaMarcaje, tipoMarcaje } = createAsistenciaDto;
+        const { funcionarioId, fecha, horaMarcaje, tipoMarcaje, observacion } = createAsistenciaDto;
         console.log('📥 Recibido del frontend:', { fecha, horaMarcaje, tipoMarcaje });
         const [year, month, day] = fecha.split('-').map(Number);
         const [hour, minute] = horaMarcaje.split(':').map(Number);
@@ -65,18 +65,19 @@ let AsistenciasService = class AsistenciasService {
             fechaSolo,
             horaMarcajeCompleta
         });
+        const tipoMarcajeValidado = await this.determinarTipoMarcaje(horaMarcajeCompleta);
         const config = await this.prisma.configuracionHorario.findUnique({
-            where: { tipoMarcaje },
+            where: { tipoMarcaje: tipoMarcajeValidado },
         });
         if (!config) {
-            throw new common_1.NotFoundException(`No existe configuración para ${tipoMarcaje}`);
+            throw new common_1.NotFoundException(`No existe configuración para ${tipoMarcajeValidado}`);
         }
         const hMarcaje = horaMarcajeCompleta.getHours() * 60 + horaMarcajeCompleta.getMinutes();
         const [h, m] = config.horaProgramada.split(':').map(Number);
         const hEsperada = h * 60 + m;
         let minutosTardanza = 0;
         let minutosSalidaAnticipada = 0;
-        if (tipoMarcaje === 'INGRESO_MANANA' || tipoMarcaje === 'INGRESO_TARDE') {
+        if (tipoMarcajeValidado === 'INGRESO_MANANA' || tipoMarcajeValidado === 'INGRESO_TARDE') {
             const diferencia = hMarcaje - hEsperada - config.toleranciaMinutos;
             minutosTardanza = diferencia > 0 ? diferencia : 0;
         }
@@ -89,11 +90,12 @@ let AsistenciasService = class AsistenciasService {
                 funcionarioId,
                 fecha: fechaSolo,
                 horaMarcaje: horaMarcajeCompleta,
-                tipoMarcaje,
+                tipoMarcaje: tipoMarcajeValidado,
                 metodoMarcaje: 'MANUAL',
                 minutosTardanza,
                 minutosSalidaAnticipada,
                 verificado: true,
+                observacion: observacion || null,
             },
             include: {
                 funcionario: true,

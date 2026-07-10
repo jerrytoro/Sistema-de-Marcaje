@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { GenerarReporteDto } from './dto/generar-reporte.dto';
+import { GenerarReporteDependenciaDto } from './dto/generar-reporte-dependencia.dto';
 import { PDFGenerator } from './utils/pdf-generator';
 import type { Response } from 'express';
 
@@ -135,6 +136,15 @@ export class ReportesService {
   async generarReporte(generarReporteDto: GenerarReporteDto) {
     const { funcionarioId, anio, mes } = generarReporteDto;
 
+    // Verificar que no sea una fecha futura
+    const hoy = new Date();
+    const mesActual = hoy.getMonth() + 1;
+    const anioActual = hoy.getFullYear();
+
+    if (anio > anioActual || (anio === anioActual && mes > mesActual)) {
+      throw new BadRequestException('No se puede generar un reporte para un mes futuro');
+    }
+
     // Verificar que el funcionario existe
     const funcionario = await this.prisma.funcionario.findUnique({
       where: { id: funcionarioId },
@@ -179,6 +189,12 @@ export class ReportesService {
       ],
     });
 
+    if (marcajes.length === 0) {
+      throw new BadRequestException(
+        `El funcionario no tiene marcajes registrados en el mes ${mes}/${anio}`,
+      );
+    }
+
     // Calcular estadísticas
     const diasUnicos = new Set(marcajes.map(m => m.fecha.toISOString().split('T')[0])).size;
     const totalMinutosTardanza = marcajes.reduce((sum, m) => sum + (m.minutosTardanza || 0), 0);
@@ -220,6 +236,65 @@ export class ReportesService {
     return {
       ...reporte,
       fechaGeneracion: reporte.fechaGeneracion?.toISOString() || new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Generar reportes para todos los funcionarios de una dependencia
+   */
+  async generarReportesPorDependencia(dto: GenerarReporteDependenciaDto) {
+    const { dependencia, anio, mes } = dto;
+
+    // Verificar que no sea una fecha futura
+    const hoy = new Date();
+    const mesActual = hoy.getMonth() + 1;
+    const anioActual = hoy.getFullYear();
+
+    if (anio > anioActual || (anio === anioActual && mes > mesActual)) {
+      throw new BadRequestException('No se puede generar reportes para un mes futuro');
+    }
+
+    // Buscar funcionarios de esa dependencia
+    const funcionarios = await this.prisma.funcionario.findMany({
+      where: { dependencia, estado: true }, // Solo activos
+    });
+
+    if (funcionarios.length === 0) {
+      throw new NotFoundException(`No se encontraron funcionarios activos en la dependencia: ${dependencia}`);
+    }
+
+    let generados = 0;
+    let omitidos = 0;
+    const reportesNuevos: any[] = [];
+
+    // Iterar sobre cada funcionario y generar su reporte
+    for (const funcionario of funcionarios) {
+      try {
+        const reporte = await this.generarReporte({
+          funcionarioId: funcionario.id,
+          anio,
+          mes,
+        });
+        reportesNuevos.push(reporte);
+        generados++;
+      } catch (error) {
+        if (error instanceof BadRequestException) {
+          // Si es un error de "ya existe" o "no tiene marcajes", lo omitimos
+          omitidos++;
+        } else {
+          // Si es otro error, lo registramos pero continuamos
+          console.error(`Error al generar reporte para ${funcionario.nombre} ${funcionario.apellido}:`, error);
+          omitidos++;
+        }
+      }
+    }
+
+    return {
+      success: true,
+      mensaje: `Proceso completado para la dependencia ${dependencia}`,
+      generados,
+      omitidos,
+      reportes: reportesNuevos,
     };
   }
 

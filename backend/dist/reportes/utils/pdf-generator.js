@@ -38,7 +38,7 @@ class PDFGenerator {
                 salidaAnticipada: dia.totalSalidaAnticipada > 0
                     ? this.formatearTiempo(dia.totalSalidaAnticipada)
                     : '-',
-                permisos: '-',
+                permisos: dia.permisos || '-',
                 jornada: this.formatearTiempo(dia.jornada),
                 cantidadMarcajes,
             };
@@ -80,56 +80,55 @@ class PDFGenerator {
                 totalTardanza: 0,
                 totalSalidaAnticipada: 0,
                 jornada: 0,
+                permisos: '-',
             };
-            if (marcajesDia.length >= 1) {
-                const horaReal = marcajesDia[0].horaMarcaje
-                    .toTimeString()
-                    .substring(0, 5);
-                const tardanza = marcajesDia[0].minutosTardanza || 0;
-                const tolerancia = horarios.toleranciaIngresoManana || 0;
-                dia.ingresoManana = {
-                    hora: horaReal + (tolerancia > 0 ? ` (+${tolerancia})` : ''),
-                    tardanza: tardanza,
-                    horaReal: horaReal,
-                    tolerancia: tolerancia,
-                };
-                dia.totalTardanza += tardanza;
-            }
-            if (marcajesDia.length >= 2) {
-                const horaReal = marcajesDia[1].horaMarcaje
-                    .toTimeString()
-                    .substring(0, 5);
-                dia.salidaDescanso = {
-                    hora: horaReal,
-                    anticipada: marcajesDia[1].minutosSalidaAnticipada || 0,
-                };
-                dia.totalSalidaAnticipada +=
-                    marcajesDia[1].minutosSalidaAnticipada || 0;
-            }
-            if (marcajesDia.length >= 3) {
-                const horaReal = marcajesDia[2].horaMarcaje
-                    .toTimeString()
-                    .substring(0, 5);
-                const tardanza = marcajesDia[2].minutosTardanza || 0;
-                const tolerancia = horarios.toleranciaIngresoTarde || 0;
-                dia.ingresoTarde = {
-                    hora: horaReal + (tolerancia > 0 ? ` (+${tolerancia})` : ''),
-                    tardanza: tardanza,
-                    horaReal: horaReal,
-                    tolerancia: tolerancia,
-                };
-                dia.totalTardanza += tardanza;
-            }
-            if (marcajesDia.length >= 4) {
-                const horaReal = marcajesDia[3].horaMarcaje
-                    .toTimeString()
-                    .substring(0, 5);
-                dia.salidaFinal = {
-                    hora: horaReal,
-                    anticipada: marcajesDia[3].minutosSalidaAnticipada || 0,
-                };
-                dia.totalSalidaAnticipada +=
-                    marcajesDia[3].minutosSalidaAnticipada || 0;
+            const permisosArray = [];
+            marcajesDia.forEach((marcaje) => {
+                const horaReal = marcaje.horaMarcaje.toTimeString().substring(0, 5);
+                const tardanza = marcaje.minutosTardanza || 0;
+                const anticipada = marcaje.minutosSalidaAnticipada || 0;
+                if (marcaje.observacion && marcaje.observacion.trim() !== '') {
+                    permisosArray.push(marcaje.observacion.trim());
+                }
+                switch (marcaje.tipoMarcaje) {
+                    case 'INGRESO_MANANA':
+                        const toleranciaManana = horarios.toleranciaIngresoManana || 0;
+                        dia.ingresoManana = {
+                            hora: horaReal + (toleranciaManana > 0 ? ` (+${toleranciaManana})` : ''),
+                            tardanza: tardanza,
+                            horaReal: horaReal,
+                            tolerancia: toleranciaManana,
+                        };
+                        dia.totalTardanza += tardanza;
+                        break;
+                    case 'SALIDA_DESCANSO':
+                        dia.salidaDescanso = {
+                            hora: horaReal,
+                            anticipada: anticipada,
+                        };
+                        dia.totalSalidaAnticipada += anticipada;
+                        break;
+                    case 'INGRESO_TARDE':
+                        const toleranciaTarde = horarios.toleranciaIngresoTarde || 0;
+                        dia.ingresoTarde = {
+                            hora: horaReal + (toleranciaTarde > 0 ? ` (+${toleranciaTarde})` : ''),
+                            tardanza: tardanza,
+                            horaReal: horaReal,
+                            tolerancia: toleranciaTarde,
+                        };
+                        dia.totalTardanza += tardanza;
+                        break;
+                    case 'SALIDA_FINAL':
+                        dia.salidaFinal = {
+                            hora: horaReal,
+                            anticipada: anticipada,
+                        };
+                        dia.totalSalidaAnticipada += anticipada;
+                        break;
+                }
+            });
+            if (permisosArray.length > 0) {
+                dia.permisos = permisosArray.join(', ');
             }
             const cantidadMarcajes = marcajesDia.length;
             if (cantidadMarcajes === 1) {
@@ -225,7 +224,7 @@ class PDFGenerator {
         this.dibujarTabla(doc, datosReporte, doc.y);
     }
     static dibujarTabla(doc, datosReporte, startY) {
-        const colWidth = 57;
+        const colWidths = [35, 45, 50, 45, 50, 45, 50, 150, 45];
         const rowHeight = 15;
         const headerHeight = 24;
         const margin = 40;
@@ -243,18 +242,18 @@ class PDFGenerator {
         ];
         doc.fontSize(8).font('Helvetica-Bold');
         headers.forEach((header, i) => {
-            const x = margin + i * colWidth;
+            const x = margin + colWidths.slice(0, i).reduce((a, b) => a + b, 0);
             doc
-                .rect(x, yPos, colWidth, headerHeight)
+                .rect(x, yPos, colWidths[i], headerHeight)
                 .fillAndStroke('#5a5a5a', '#fff');
             doc.fillColor('#fff').text(header, x + 2, yPos + 5, {
-                width: colWidth - 4,
+                width: colWidths[i] - 4,
                 align: 'center',
             });
         });
         yPos += headerHeight;
         yPos += 3;
-        doc.fontSize(8).font('Helvetica');
+        doc.fontSize(9).font('Helvetica');
         datosReporte.asistenciasPorDia.forEach((dia) => {
             const rowData = [
                 dia.fecha,
@@ -267,8 +266,13 @@ class PDFGenerator {
                 dia.permisos,
                 dia.jornada,
             ];
+            let maxRowHeight = rowHeight;
+            const permisosHeight = doc.heightOfString(dia.permisos, { width: colWidths[7] - 4, align: 'center' });
+            if (permisosHeight + 6 > maxRowHeight) {
+                maxRowHeight = permisosHeight + 6;
+            }
             rowData.forEach((data, i) => {
-                const x = margin + i * colWidth;
+                const x = margin + colWidths.slice(0, i).reduce((a, b) => a + b, 0);
                 let fillColor = '#fff';
                 let textColor = '#000';
                 if (i === 5 && data !== '-') {
@@ -286,35 +290,37 @@ class PDFGenerator {
                         fillColor = '#ffff00';
                     }
                 }
-                doc.rect(x, yPos, colWidth, rowHeight).fillAndStroke(fillColor, '#000');
-                doc.fillColor(textColor).text(data, x + 2, yPos + 5, {
-                    width: colWidth - 4,
+                doc.rect(x, yPos, colWidths[i], maxRowHeight).fillAndStroke(fillColor, '#000');
+                const textHeight = doc.heightOfString(String(data), { width: colWidths[i] - 4, align: 'center' });
+                const yOffset = (maxRowHeight - textHeight) / 2;
+                doc.fillColor(textColor).text(String(data), x + 2, yPos + yOffset, {
+                    width: colWidths[i] - 4,
                     align: 'center',
                 });
             });
-            yPos += rowHeight;
+            yPos += maxRowHeight;
             if (yPos > doc.page.height - 100) {
                 doc.addPage();
                 yPos = 60;
                 doc.fontSize(8).font('Helvetica-Bold');
                 headers.forEach((header, i) => {
-                    const x = margin + i * colWidth;
+                    const x = margin + colWidths.slice(0, i).reduce((a, b) => a + b, 0);
                     doc
-                        .rect(x, yPos, colWidth, headerHeight)
+                        .rect(x, yPos, colWidths[i], headerHeight)
                         .fillAndStroke('#5a5a5a', '#fff');
-                    doc.fillColor('#000').text(header, x + 2, yPos + 5, {
-                        width: colWidth - 4,
+                    doc.fillColor('#fff').text(header, x + 2, yPos + 5, {
+                        width: colWidths[i] - 4,
                         align: 'center',
                     });
                 });
                 yPos += headerHeight;
                 yPos += 3;
-                doc.fontSize(8).font('Helvetica');
+                doc.fontSize(7).font('Helvetica');
             }
         });
         yPos += 5;
         const totalesData = [
-            'TOTAL MES',
+            'TOTAL',
             '-',
             '-',
             '-',
@@ -324,14 +330,14 @@ class PDFGenerator {
             '-',
             datosReporte.resumen.tiempoTrabajado,
         ];
-        doc.font('Helvetica-Bold');
+        doc.fontSize(9).font('Helvetica-Bold');
         totalesData.forEach((data, i) => {
-            const x = margin + i * colWidth;
+            const x = margin + colWidths.slice(0, i).reduce((a, b) => a + b, 0);
             doc
-                .rect(x, yPos, colWidth, rowHeight + 3)
+                .rect(x, yPos, colWidths[i], rowHeight + 3)
                 .fillAndStroke('#ff4040', '#fff');
-            doc.fillColor('#fff').text(data, x + 2, yPos + 6, {
-                width: colWidth - 4,
+            doc.fillColor('#fff').text(String(data), x + 2, yPos + 6, {
+                width: colWidths[i] - 4,
                 align: 'center',
             });
         });

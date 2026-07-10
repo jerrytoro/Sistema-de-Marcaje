@@ -10,7 +10,7 @@ import * as bcrypt from 'bcrypt';
  */
 @Injectable()
 export class UsuariosService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * Crear un nuevo usuario con su funcionario
@@ -26,7 +26,12 @@ export class UsuariosService {
     if (existingUser) {
       throw new ConflictException('El username ya está en uso');
     }
-
+    // const adminexist = await this.prisma.usuario.findMany({
+    //   where: { rol: "ADMIN" }
+    // })
+    // if (adminexist) {
+    //   throw new ConflictException('Solo se puede registrar un administrador');
+    // }
     // Hash de la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -218,7 +223,12 @@ export class UsuariosService {
     if (!usuario) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
     }
-
+    // const adminexist = await this.prisma.usuario.findMany({
+    //   where: { rol: "ADMIN" }
+    // })
+    // if (adminexist) {
+    //   throw new ConflictException('No se puede eliminar al administrador');
+    // }
     // Soft delete - solo desactivar
     await this.prisma.usuario.update({
       where: { id },

@@ -1,5 +1,5 @@
 import api from './api';
-import type { Reporte, GenerarReporteDto } from '@/types';
+import type { Reporte, GenerarReporteDto, GenerarReporteDependenciaDto } from '@/types';
 
 /**
  * Servicio de Reportes
@@ -10,6 +10,13 @@ class ReportesService {
    */
   async generar(data: GenerarReporteDto): Promise<Reporte> {
     return await api.post<Reporte>('/reportes/generar', data);
+  }
+
+  /**
+   * Generar reportes por dependencia
+   */
+  async generarPorDependencia(data: GenerarReporteDependenciaDto): Promise<{ success: boolean; mensaje: string; generados: number; omitidos: number; reportes: Reporte[] }> {
+    return await api.post('/reportes/generar/dependencia', data);
   }
 
   /**

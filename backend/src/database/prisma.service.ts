@@ -9,7 +9,7 @@ import { PrismaClient } from '@prisma/client';
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
     super({
-      log: ['query', 'info', 'warn', 'error'], // Logs de consultas en desarrollo
+      log: ['warn', 'error'], // Logs de consultas en desarrollo
     });
   }
 
@@ -19,7 +19,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
    */
   async onModuleInit() {
     await this.$connect();
-    console.log('✅ Conectado a la base de datos PostgreSQL');
+    console.log('Conectado a la base de datos PostgreSQL');
   }
 
   /**
@@ -28,7 +28,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
    */
   async onModuleDestroy() {
     await this.$disconnect();
-    console.log('❌ Desconectado de la base de datos PostgreSQL');
+    console.log('Desconectado de la base de datos PostgreSQL');
   }
 
   /**
@@ -58,6 +58,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     // Reactivar checks
     await this.$executeRawUnsafe('SET session_replication_role = DEFAULT;');
 
-    console.log('🧹 Base de datos limpiada');
+    console.log('Base de datos limpiada');
   }
 }

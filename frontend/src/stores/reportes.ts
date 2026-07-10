@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { reportesService } from '@/services/reportes.service';
-import type { Reporte, GenerarReporteDto } from '@/types';
+import type { Reporte, GenerarReporteDto, GenerarReporteDependenciaDto } from '@/types';
 
 export const useReportesStore = defineStore('reportes', () => {
   // State
@@ -82,6 +82,28 @@ export const useReportesStore = defineStore('reportes', () => {
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Error al generar reporte';
       console.error('Error generating reporte:', err);
+      return { success: false, error: error.value };
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function generarReportesDependencia(data: GenerarReporteDependenciaDto) {
+    try {
+      loading.value = true;
+      error.value = null;
+
+      const response = await reportesService.generarPorDependencia(data);
+      
+      // Añadir los reportes nuevos al inicio de la lista
+      if (response.reportes && response.reportes.length > 0) {
+        reportes.value.unshift(...response.reportes);
+      }
+      
+      return { success: true, data: response };
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Error al generar reportes por dependencia';
+      console.error('Error generating reportes por dependencia:', err);
       return { success: false, error: error.value };
     } finally {
       loading.value = false;
@@ -179,6 +201,7 @@ export const useReportesStore = defineStore('reportes', () => {
     loadReportes,
     getReporte,
     generarReporte,
+    generarReportesDependencia,
     descargarReporte,
     regenerarReporte,
     deleteReporte,

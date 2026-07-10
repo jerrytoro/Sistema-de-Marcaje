@@ -96,6 +96,12 @@ let ReportesService = class ReportesService {
     }
     async generarReporte(generarReporteDto) {
         const { funcionarioId, anio, mes } = generarReporteDto;
+        const hoy = new Date();
+        const mesActual = hoy.getMonth() + 1;
+        const anioActual = hoy.getFullYear();
+        if (anio > anioActual || (anio === anioActual && mes > mesActual)) {
+            throw new common_1.BadRequestException('No se puede generar un reporte para un mes futuro');
+        }
         const funcionario = await this.prisma.funcionario.findUnique({
             where: { id: funcionarioId },
         });
@@ -129,6 +135,9 @@ let ReportesService = class ReportesService {
                 { horaMarcaje: 'asc' },
             ],
         });
+        if (marcajes.length === 0) {
+            throw new common_1.BadRequestException(`El funcionario no tiene marcajes registrados en el mes ${mes}/${anio}`);
+        }
         const diasUnicos = new Set(marcajes.map(m => m.fecha.toISOString().split('T')[0])).size;
         const totalMinutosTardanza = marcajes.reduce((sum, m) => sum + (m.minutosTardanza || 0), 0);
         const totalMinutosSalidaAnticipada = marcajes.reduce((sum, m) => sum + (m.minutosSalidaAnticipada || 0), 0);
@@ -164,6 +173,51 @@ let ReportesService = class ReportesService {
         return {
             ...reporte,
             fechaGeneracion: reporte.fechaGeneracion?.toISOString() || new Date().toISOString(),
+        };
+    }
+    async generarReportesPorDependencia(dto) {
+        const { dependencia, anio, mes } = dto;
+        const hoy = new Date();
+        const mesActual = hoy.getMonth() + 1;
+        const anioActual = hoy.getFullYear();
+        if (anio > anioActual || (anio === anioActual && mes > mesActual)) {
+            throw new common_1.BadRequestException('No se puede generar reportes para un mes futuro');
+        }
+        const funcionarios = await this.prisma.funcionario.findMany({
+            where: { dependencia, estado: true },
+        });
+        if (funcionarios.length === 0) {
+            throw new common_1.NotFoundException(`No se encontraron funcionarios activos en la dependencia: ${dependencia}`);
+        }
+        let generados = 0;
+        let omitidos = 0;
+        const reportesNuevos = [];
+        for (const funcionario of funcionarios) {
+            try {
+                const reporte = await this.generarReporte({
+                    funcionarioId: funcionario.id,
+                    anio,
+                    mes,
+                });
+                reportesNuevos.push(reporte);
+                generados++;
+            }
+            catch (error) {
+                if (error instanceof common_1.BadRequestException) {
+                    omitidos++;
+                }
+                else {
+                    console.error(`Error al generar reporte para ${funcionario.nombre} ${funcionario.apellido}:`, error);
+                    omitidos++;
+                }
+            }
+        }
+        return {
+            success: true,
+            mensaje: `Proceso completado para la dependencia ${dependencia}`,
+            generados,
+            omitidos,
+            reportes: reportesNuevos,
         };
     }
     async findAll() {

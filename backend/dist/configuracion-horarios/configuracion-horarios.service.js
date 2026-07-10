@@ -125,11 +125,11 @@ let ConfiguracionHorariosService = class ConfiguracionHorariosService {
                 mensaje: 'No hay horarios configurados',
             };
         }
-        console.log('🕐 Hora actual:', horaActual);
+        console.log('Hora actual:', horaActual);
         for (const horario of horarios) {
             if (horario.horaInicioVentana && horario.horaFinVentana) {
                 if (horaActual >= horario.horaInicioVentana && horaActual <= horario.horaFinVentana) {
-                    console.log('✅ Dentro de ventana:', horario.tipoMarcaje);
+                    console.log('Dentro de ventana:', horario.tipoMarcaje);
                     const [hFin, mFin] = horario.horaFinVentana.split(':').map(Number);
                     const [hActual, mActual] = horaActual.split(':').map(Number);
                     const minutosRestantes = (hFin * 60 + mFin) - (hActual * 60 + mActual);
@@ -145,11 +145,11 @@ let ConfiguracionHorariosService = class ConfiguracionHorariosService {
                 }
             }
         }
-        console.log('⏭️ No estamos en ninguna ventana, buscando la próxima...');
+        console.log('No estamos en ninguna ventana, buscando la próxima...');
         for (const horario of horarios) {
             if (horario.horaInicioVentana && horario.horaFinVentana) {
                 if (horaActual < horario.horaInicioVentana) {
-                    console.log('⏭️ Próxima ventana:', horario.tipoMarcaje);
+                    console.log('Próxima ventana:', horario.tipoMarcaje);
                     const [hInicio, mInicio] = horario.horaInicioVentana.split(':').map(Number);
                     const [hActual, mActual] = horaActual.split(':').map(Number);
                     const minutosHastaInicio = (hInicio * 60 + mInicio) - (hActual * 60 + mActual);
@@ -165,7 +165,7 @@ let ConfiguracionHorariosService = class ConfiguracionHorariosService {
                 }
             }
         }
-        console.log('✅ Todas las ventanas completadas');
+        console.log('Todas las ventanas completadas');
         const primerHorario = horarios[0];
         if (primerHorario) {
             return {

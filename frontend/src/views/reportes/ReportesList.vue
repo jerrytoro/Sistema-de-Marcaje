@@ -18,10 +18,16 @@
                 {{ reportesStore.totalReportes }} reportes generados
               </p>
             </div>
-            <button class="btn btn-primary" @click="abrirModal()">
-              <i class="bi bi-plus-circle me-2"></i>
-              Generar Reporte
-            </button>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-primary" @click="abrirModalDependencia()">
+                <i class="bi bi-building me-2"></i>
+                Generar por Dependencia
+              </button>
+              <button class="btn btn-primary" @click="abrirModal()">
+                <i class="bi bi-person-plus me-2"></i>
+                Generar por Funcionario
+              </button>
+            </div>
           </div>
 
           <!-- Info Card -->
@@ -239,16 +245,88 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Generar Reporte por Dependencia -->
+    <div class="modal fade" id="modalGenerarDependencia" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">
+              <i class="bi bi-building me-2"></i>
+              Generar Reportes por Dependencia
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="handleGenerarDependencia">
+              <div class="mb-3">
+                <label class="form-label">Dependencia *</label>
+                <select class="form-select" v-model="formGenerarDependencia.dependencia" required>
+                  <option value="">Seleccionar...</option>
+                  <option v-for="dep in dependenciasUnicas" :key="dep" :value="dep">
+                    {{ dep }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Mes *</label>
+                  <select class="form-select" v-model.number="formGenerarDependencia.mes" required>
+                    <option value="">Seleccionar...</option>
+                    <option v-for="mes in meses" :key="mes.value" :value="mes.value">
+                      {{ mes.label }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Año *</label>
+                  <select class="form-select" v-model.number="formGenerarDependencia.anio" required>
+                    <option value="">Seleccionar...</option>
+                    <option v-for="anio in anios" :key="anio" :value="anio">
+                      {{ anio }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="alert alert-info small">
+                <i class="bi bi-info-circle me-2"></i>
+                Se generarán los reportes para todos los funcionarios que pertenezcan a la dependencia seleccionada. 
+                Los reportes ya existentes o funcionarios sin marcajes serán omitidos automáticamente.
+              </div>
+
+              <div class="modal-footer border-0 px-0 pb-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary" :disabled="reportesStore.loading">
+                  <span v-if="reportesStore.loading">
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    Generando...
+                  </span>
+                  <span v-else>
+                    <i class="bi bi-check-circle me-2"></i>
+                    Generar Masivamente
+                  </span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useReportesStore } from '@/stores/reportes';
 import { funcionariosService } from '@/services/funcionarios.service';
 import Navbar from '@/components/layout/Navbar.vue';
 import Sidebar from '@/components/layout/Sidebar.vue';
-import type { Reporte, GenerarReporteDto, Funcionario } from '@/types';
+import type { Reporte, GenerarReporteDto, GenerarReporteDependenciaDto, Funcionario } from '@/types';
 import { Modal } from 'bootstrap';
 
 const reportesStore = useReportesStore();
@@ -259,6 +337,17 @@ const formGenerar = reactive<GenerarReporteDto>({
   funcionarioId: 0,
   mes: new Date().getMonth() + 1,
   anio: new Date().getFullYear(),
+});
+
+const formGenerarDependencia = reactive<GenerarReporteDependenciaDto>({
+  dependencia: '',
+  mes: new Date().getMonth() + 1,
+  anio: new Date().getFullYear(),
+});
+
+const dependenciasUnicas = computed(() => {
+  const deps = funcionarios.value.map(f => f.dependencia).filter(Boolean);
+  return [...new Set(deps)].sort();
 });
 
 const meses = [
@@ -283,6 +372,14 @@ let modal: Modal | null = null;
 
 const abrirModal = () => {
   const modalElement = document.getElementById('modalGenerar');
+  if (modalElement) {
+    modal = new Modal(modalElement);
+    modal.show();
+  }
+}
+
+const abrirModalDependencia = () => {
+  const modalElement = document.getElementById('modalGenerarDependencia');
   if (modalElement) {
     modal = new Modal(modalElement);
     modal.show();
@@ -316,6 +413,24 @@ const handleGenerar = async () => {
     formGenerar.anio = new Date().getFullYear();
 
     alert('Reporte generado exitosamente');
+  } else {
+    alert(`Error: ${result.error}`);
+  }
+};
+
+const handleGenerarDependencia = async () => {
+  const result = await reportesStore.generarReportesDependencia(formGenerarDependencia);
+
+  if (result.success) {
+    const modalDep = Modal.getInstance(document.getElementById('modalGenerarDependencia')!);
+    modalDep?.hide();
+
+    // Reset form
+    formGenerarDependencia.dependencia = '';
+    formGenerarDependencia.mes = new Date().getMonth() + 1;
+    formGenerarDependencia.anio = new Date().getFullYear();
+
+    alert(`¡Éxito! ${result.data?.generados || 0} reportes generados. (${result.data?.omitidos || 0} omitidos por falta de marcajes o porque ya existían).`);
   } else {
     alert(`Error: ${result.error}`);
   }

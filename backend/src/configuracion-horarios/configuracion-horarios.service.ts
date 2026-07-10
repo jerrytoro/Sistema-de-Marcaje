@@ -228,14 +228,14 @@ async getSiguienteMarcaje() {
     };
   }
 
-  console.log('🕐 Hora actual:', horaActual);
+  console.log('Hora actual:', horaActual);
 
   // ✅ PASO 1: Verificar si estamos DENTRO de alguna ventana activa
   for (const horario of horarios) {
     if (horario.horaInicioVentana && horario.horaFinVentana) {
       // Si la hora actual está dentro de la ventana, ese es el marcaje activo
       if (horaActual >= horario.horaInicioVentana && horaActual <= horario.horaFinVentana) {
-        console.log('✅ Dentro de ventana:', horario.tipoMarcaje);
+        console.log('Dentro de ventana:', horario.tipoMarcaje);
         
         // Calcular minutos restantes hasta el fin de la ventana
         const [hFin, mFin] = horario.horaFinVentana.split(':').map(Number);
@@ -255,14 +255,14 @@ async getSiguienteMarcaje() {
     }
   }
 
-  console.log('⏭️ No estamos en ninguna ventana, buscando la próxima...');
+  console.log('No estamos en ninguna ventana, buscando la próxima...');
 
   // ✅ PASO 2: Si no estamos en ninguna ventana, buscar la PRÓXIMA ventana
   for (const horario of horarios) {
     if (horario.horaInicioVentana && horario.horaFinVentana) {
       // Si la ventana aún no ha empezado
       if (horaActual < horario.horaInicioVentana) {
-        console.log('⏭️ Próxima ventana:', horario.tipoMarcaje);
+        console.log('Próxima ventana:', horario.tipoMarcaje);
         
         // Calcular minutos hasta que inicie la ventana
         const [hInicio, mInicio] = horario.horaInicioVentana.split(':').map(Number);
@@ -282,7 +282,7 @@ async getSiguienteMarcaje() {
     }
   }
 
-  console.log('✅ Todas las ventanas completadas');
+  console.log('Todas las ventanas completadas');
 
   // ✅ PASO 3: Si ya pasaron todas las ventanas del día
   const primerHorario = horarios[0];

@@ -31,11 +31,25 @@ class ApiClient {
     );
 
     // Interceptor de response para manejar errores
+    // this.client.interceptors.response.use(
+    //   (response) => response,
+    //   (error: AxiosError<ApiError>) => {
+    //     if (error.response?.status === 401) {
+    //       // Token inválido o expirado
+    //       localStorage.removeItem('token');
+    //       localStorage.removeItem('user');
+    //       window.location.href = '/login';
+    //     }
+    //     return Promise.reject(error);
+    //   }
+    // );
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError<ApiError>) => {
-        if (error.response?.status === 401) {
-          // Token inválido o expirado
+        const isLoginRequest = error.config?.url?.includes('/auth/login');
+
+        if (error.response?.status === 401 && !isLoginRequest) {
+          // Token inválido o expirado (no aplica al intento de login)
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           window.location.href = '/login';
@@ -86,7 +100,7 @@ class ApiClient {
     });
 
     const blob = new Blob([response.data], { type: response.headers['content-type'] });
-    
+
     // Si se proporciona filename, descargar automáticamente
     if (filename) {
       const link = document.createElement('a');
@@ -95,7 +109,7 @@ class ApiClient {
       link.click();
       window.URL.revokeObjectURL(link.href);
     }
-    
+
     return blob;
   }
 

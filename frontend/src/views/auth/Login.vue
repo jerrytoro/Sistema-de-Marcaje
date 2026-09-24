@@ -27,15 +27,8 @@
                     <i class="bi bi-person-fill me-1"></i>
                     Usuario
                   </label>
-                  <input
-                    type="text"
-                    class="form-control form-control-lg"
-                    id="username"
-                    v-model="credentials.username"
-                    placeholder="Ingrese su usuario"
-                    required
-                    :disabled="authStore.loading"
-                  />
+                  <input type="text" class="form-control form-control-lg" id="username" v-model="credentials.username"
+                    placeholder="Ingrese su usuario" required :disabled="authStore.loading" />
                 </div>
 
                 <!-- Password -->
@@ -44,23 +37,13 @@
                     <i class="bi bi-lock-fill me-1"></i>
                     Contraseña
                   </label>
-                  <input
-                    type="password"
-                    class="form-control form-control-lg"
-                    id="password"
-                    v-model="credentials.password"
-                    placeholder="Ingrese su contraseña"
-                    required
-                    :disabled="authStore.loading"
-                  />
+                  <input type="password" class="form-control form-control-lg" id="password"
+                    v-model="credentials.password" placeholder="Ingrese su contraseña" required
+                    :disabled="authStore.loading" />
                 </div>
 
                 <!-- Botón de login -->
-                <button
-                  type="submit"
-                  class="btn btn-primary btn-lg w-100"
-                  :disabled="authStore.loading"
-                >
+                <button type="submit" class="btn btn-primary btn-lg w-100" :disabled="authStore.loading">
                   <span v-if="authStore.loading">
                     <span class="spinner-border spinner-border-sm me-2" role="status"></span>
                     Iniciando sesión...
@@ -116,9 +99,12 @@ const credentials = reactive<LoginDto>({
 
 const handleLogin = async () => {
   const success = await authStore.login(credentials);
-  
+
   if (success) {
     router.push('/dashboard');
+  } else {
+    credentials.username = '';
+    credentials.password = '';
   }
 };
 </script>

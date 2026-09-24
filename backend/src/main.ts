@@ -5,6 +5,8 @@ import * as express from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 process.env.TZ = 'America/La_Paz';
+console.log('Offset:', new Date().getTimezoneOffset()); // Debe dar 240 (4h * 60min)
+console.log('Hora actual:', new Date().toString()); // Debe mostrar -0400
 /**
  * Función principal que inicializa la aplicación NestJS
  */

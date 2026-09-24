@@ -44,7 +44,7 @@ class UsuariosService {
    * Cambiar contraseña
    */
   async changePassword(id: number, data: ChangePasswordDto): Promise<void> {
-    await api.patch(`/usuarios/${id}/cambiar-password`, data);
+    await api.patch(`/usuarios/${id}/password`, data);
   }
 
   /**

@@ -371,9 +371,9 @@ export class ScheduledTasksService {
       tareas: [
         {
           nombre: 'Salidas no registradas',
-          cron: '0 19 * * *',
-          descripcion: 'Notifica a las 19:00 si no se registró salida',
-          proximaEjecucion: 'Hoy a las 19:00',
+          cron: '30 18 * * *',
+          descripcion: 'Notifica a las 18:30 si no se registró salida',
+          proximaEjecucion: 'Hoy a las 18:30',
         },
         {
           nombre: 'Recordatorio ingreso mañana',

@@ -39,6 +39,8 @@ const app_module_1 = require("./app.module");
 const express = __importStar(require("express"));
 const swagger_1 = require("@nestjs/swagger");
 process.env.TZ = 'America/La_Paz';
+console.log('Offset:', new Date().getTimezoneOffset());
+console.log('Hora actual:', new Date().toString());
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.enableCors({
